@@ -3,6 +3,9 @@
  */
 package org.saiku.query;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang.StringUtils;
 
 
@@ -18,6 +21,8 @@ public abstract class AbstractQueryObject implements IQuerySet {
 	private boolean nonEmpty;
 	private String nonEmptyMeasure;
 	private String mdxExpression;
+	
+	private List<String> filterExpressions = new ArrayList<String>();
 
 	
 	public abstract String getName();
@@ -128,6 +133,16 @@ public abstract class AbstractQueryObject implements IQuerySet {
 	public String getMdxSetExpression() {
 		return this.mdxExpression;
 	}
+	
+	/* (non-Javadoc)
+	 * @see org.saiku.query.IQuerySet#isMdxSetExpression()
+	 */
+	@Override
+	public boolean isMdxSetExpression() {
+		return this.mdxExpression == null;
+	}
+	
+	
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
@@ -179,6 +194,28 @@ public abstract class AbstractQueryObject implements IQuerySet {
 		if (!StringUtils.equals(getName(), other.getName()))
 			return false;
 		return true;
+	}
+
+	@Override
+	public void addFilterExpression(String filterMdxExpression) {
+		filterExpressions.add(filterMdxExpression);
+		
+	}
+
+	@Override
+	public void setFilterExpression(int index, String filterMdxExpression) {
+		filterExpressions.add(index, filterMdxExpression);
+		
+	}
+
+	@Override
+	public List<String> getFilterExpressions() {
+		return filterExpressions;
+	}
+
+	@Override
+	public void clearFilterExpressions() {
+		filterExpressions.clear();
 	}
 
 }

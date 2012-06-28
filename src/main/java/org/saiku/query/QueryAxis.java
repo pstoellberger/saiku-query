@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.olap4j.Axis;
 
-public class QueryAxis {
+public class QueryAxis extends AbstractQueryObject {
 
     protected final List<QueryHierarchy> hierarchies = new HierarchyList();
 

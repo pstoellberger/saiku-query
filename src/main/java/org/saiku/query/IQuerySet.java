@@ -1,5 +1,7 @@
 package org.saiku.query;
 
+import java.util.List;
+
 public interface IQuerySet {
 	
 	/**
@@ -133,4 +135,13 @@ public interface IQuerySet {
      * @return mdxSetExpression - Arbitrary MDX Expression of this query object
      */
     public String getMdxSetExpression();
+    
+    public boolean isMdxSetExpression();
+    
+    
+    public void addFilterExpression(String filterMdxExpression);
+    public void setFilterExpression(int index, String filterMdxExpression);
+    public List<String> getFilterExpressions();
+    public void clearFilterExpressions();
+    
 }

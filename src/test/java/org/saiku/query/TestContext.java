@@ -3,13 +3,17 @@ package org.saiku.query;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.DriverManager;
 import java.util.Properties;
 
 import junit.framework.TestCase;
 
+import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapWrapper;
+import org.olap4j.layout.TraditionalCellSetFormatter;
 
 public class TestContext extends TestCase {
 	public static final String NL = System.getProperty("line.separator");
@@ -82,5 +86,13 @@ public class TestContext extends TestCase {
 			this.path = path;
 		}		
 	}
+	
+    public static String toString(CellSet cellSet) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        new TraditionalCellSetFormatter().format(cellSet, pw);
+        pw.flush();
+        return sw.toString();
+    }
 
 }

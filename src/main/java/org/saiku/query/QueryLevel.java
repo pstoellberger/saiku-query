@@ -1,10 +1,18 @@
 package org.saiku.query;
 
-import org.olap4j.metadata.Level;
+import java.util.ArrayList;
+import java.util.List;
 
-public class QueryLevel extends AbstractQueryObject {
+import org.olap4j.impl.Named;
+import org.olap4j.metadata.Level;
+import org.olap4j.metadata.Member;
+
+public class QueryLevel extends AbstractQueryObject implements Named {
     private final QueryHierarchy hierarchy;
 	private final Level level;
+	
+	private List<Member> inclusions = new ArrayList<Member>();
+	private List<Member> exclusions = new ArrayList<Member>();
 
     public QueryLevel(QueryHierarchy hierarchy, Level level) {
         super();
@@ -31,6 +39,28 @@ public class QueryLevel extends AbstractQueryObject {
         return level;
     }
 
+    public List<Member> getInclusions() {
+    	return inclusions;
+    }
+    
+    public List<Member> getExclusions() {
+    	return exclusions;
+    }
+    
+    protected void include(Member m) {
+    	if(!inclusions.contains(m)) {
+    		inclusions.add(m);
+    	}
+    }
+    
+    protected void exclude(Member m) {
+    	if(inclusions.contains(m)) {
+    		inclusions.add(m);
+    	}
+    	if(!exclusions.contains(m)) {
+    		exclusions.add(m);
+    	}
+    }
 }
 
 
