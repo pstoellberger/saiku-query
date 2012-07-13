@@ -1,17 +1,18 @@
 package org.saiku.query;
 
-import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.olap4j.Axis;
+import org.olap4j.impl.NamedListImpl;
+import org.olap4j.metadata.NamedList;
 
 public class QueryAxis extends AbstractQueryObject {
 
-    protected final List<QueryHierarchy> hierarchies = new HierarchyList();
-
+    protected final NamedList<QueryHierarchy> hierarchies = new NamedListImpl<QueryHierarchy>();
+    
     private final Query query;
     protected Axis location = null;
+    private boolean nonEmpty;
     
     public QueryAxis(Query query, Axis location) {
         super();
@@ -23,12 +24,31 @@ public class QueryAxis extends AbstractQueryObject {
         return location;
     }
 
+    /**
+     * Returns whether this Query Group filters out empty rows.
+     * If true, axis filters out empty rows, and the MDX to evaluate the axis
+     * will be generated with the "NON EMPTY" expression.
+     * Other Query Elements will use Filter( Not IsEmpty (<query group set>), <measure>)
+     *
+     * @return Whether this query group should filter out empty rows
+     *
+     * @see #setNonEmpty(boolean)
+     */
+    public boolean isNonEmpty() {
+    	return nonEmpty;
+    }
 
     /**
-     * Returns the name of this QueryAxis.
+     * Sets whether this Query Group filters out empty rows.
      *
-     * @return the name of this axis, for example "ROWS", "COLUMNS".
+     * @param nonEmpty Whether this axis should filter out empty rows
+     *
+     * @see #isNonEmpty()
      */
+    public void setNonEmpty(boolean nonEmpty) {
+    	this.nonEmpty = nonEmpty;
+    }
+
     public String getName() {
         return location.getCaption(null);
     }
@@ -52,6 +72,7 @@ public class QueryAxis extends AbstractQueryObject {
      * to this axis.
      */
     public void addHierarchy(QueryHierarchy hierarchy) {
+    	hierarchy.setAxis(this);
         this.getQueryHierarchies().add(hierarchy);
     }
 
@@ -64,6 +85,7 @@ public class QueryAxis extends AbstractQueryObject {
      * the QueryHierarchy
      */
     public void addHierarchy(int index, QueryHierarchy hierarchy) {
+    	hierarchy.setAxis(this);
         this.getQueryHierarchies().add(index, hierarchy);
     }
 
@@ -73,57 +95,9 @@ public class QueryAxis extends AbstractQueryObject {
      * from this axis.
      */
     public void removeHierarchy(QueryHierarchy hierarchy) {
+    	hierarchy.setAxis(null);
         this.getQueryHierarchies().remove(hierarchy);
     }
-	
-    private class HierarchyList extends AbstractList<QueryHierarchy> {
-        private final List<QueryHierarchy> list =
-            new ArrayList<QueryHierarchy>();
-
-        public QueryHierarchy get(int index) {
-            return list.get(index);
-        }
-
-        public int size() {
-            return list.size();
-        }
-
-        public QueryHierarchy set(int index, QueryHierarchy hierarchy) {
-            if (hierarchy.getAxis() != null
-                && hierarchy.getAxis() != QueryAxis.this)
-            {
-                hierarchy.getAxis().getQueryHierarchies().remove(hierarchy);
-            }
-            hierarchy.setAxis(QueryAxis.this);
-            return list.set(index, hierarchy);
-        }
-
-        public void add(int index, QueryHierarchy hierarchy) {
-            if (this.contains(hierarchy)) {
-                throw new IllegalStateException(
-                    "hierarchy already on this axis");
-            }
-            if (hierarchy.getAxis() != null
-                && hierarchy.getAxis() != QueryAxis.this)
-            {
-                // careful! potential for loop
-                hierarchy.getAxis().getQueryHierarchies().remove(hierarchy);
-            }
-            hierarchy.setAxis(QueryAxis.this);
-            if (index >= list.size()) {
-                list.add(hierarchy);
-            } else {
-                list.add(index, hierarchy);
-            }
-        }
-
-        public QueryHierarchy remove(int index) {
-            QueryHierarchy hierarchy = list.remove(index);
-            hierarchy.setAxis(null);
-            return hierarchy;
-        }
-    }
-
 }
 
 

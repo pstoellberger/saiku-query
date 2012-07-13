@@ -12,8 +12,12 @@ import org.olap4j.metadata.Catalog;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Schema;
+import org.saiku.query.IQuerySet.HierarchizeMode;
+import org.saiku.query.mdx.GenericFilter;
+import org.saiku.query.mdx.IFilterFunction.MdxFunctionType;
+import org.saiku.query.mdx.NFilter;
 
-public class ConnectionTest extends TestCase {
+public class OlapTest extends TestCase {
 	
 	private TestContext context = TestContext.instance();
 
@@ -31,13 +35,16 @@ public class ConnectionTest extends TestCase {
 		}
 	}
 	
-	public void testQuery() {
+	public void testBasicQuery() {
 		
 		try {
 			Cube cube = getFoodmartCube("Sales");
 			Query query = new Query("my query", cube);
 			QueryAxis qa = query.getAxis(Axis.COLUMNS);
-			qa.setMdxSetExpression("Product.Drink");
+			qa.setMdxSetExpression("Product.Drink.Children");
+			qa.addFilter(new GenericFilter("[Measures].[Unit Sales] > 1"));
+			qa.addFilter(new NFilter(MdxFunctionType.TopPercent, 100, "[Measures].[Customer Count]"));
+			qa.setHierarchizeMode(HierarchizeMode.PRE);
 			SelectNode mdx = query.getSelect();
 	        String mdxString = mdx.toString();
 	        System.out.println("MDX: " + mdxString);
@@ -49,8 +56,34 @@ public class ConnectionTest extends TestCase {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+	}
+	
+	public void testBasicQueryModel() {
 		
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query", cube);
+			QueryAxis qa = query.getAxis(Axis.COLUMNS);
+			QueryHierarchy products = query.getHierarchy("Product");
+			
+			products.includeLevel("Product Family");
+			products.exclude("[Product].[Drink]");
+			products.exclude("[Product].[Food]");
+			products.include("[Product].[Drink].[Beverages]");
+			qa.addHierarchy(products);
+			
+			
+			SelectNode mdx = query.getSelect();
+	        String mdxString = mdx.toString();
+	        System.out.println("MDX: " + mdxString);
+	        CellSet results = query.execute();
+	        String s = TestContext.toString(results);
+	        System.out.println("RESULTS: " + s);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public Cube getFoodmartCube(String cubeName) throws Exception {

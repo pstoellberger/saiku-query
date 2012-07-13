@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.saiku.query.mdx.IFilterFunction;
 
 
 /**
@@ -17,12 +18,11 @@ public abstract class AbstractQueryObject implements IQuerySet {
 
 	
 	private SortOrder sortOrder;
+	private String sortEvaluationLiteral;
 	private HierarchizeMode hierarchizeMode;
-	private boolean nonEmpty;
-	private String nonEmptyMeasure;
 	private String mdxExpression;
 	
-	private List<String> filterExpressions = new ArrayList<String>();
+	private List<IFilterFunction> filters = new ArrayList<IFilterFunction>();
 
 	
 	public abstract String getName();
@@ -35,6 +35,15 @@ public abstract class AbstractQueryObject implements IQuerySet {
 		this.sortOrder = order;
 
 	}
+	
+	/* (non-Javadoc)
+	 * @see org.saiku.query.IQuerySet#sort(org.saiku.query.SortOrder, java.lang.String)
+	 */
+	@Override
+	public void sort(SortOrder order, String sortEvaluationLiteral) {
+		this.sortOrder = order;
+		this.sortEvaluationLiteral = sortEvaluationLiteral;
+	}
 
 	/* (non-Javadoc)
 	 * @see org.saiku.query.IQuerySet#getSortOrder()
@@ -44,13 +53,18 @@ public abstract class AbstractQueryObject implements IQuerySet {
 		return sortOrder;
 	}
 
+	@Override
+	public String getSortEvaluationLiteral() {
+		return sortEvaluationLiteral;
+	}
+
 	/* (non-Javadoc)
 	 * @see org.saiku.query.IQuerySet#clearSort()
 	 */
 	@Override
 	public void clearSort() {
 		this.sortOrder = null;
-
+		this.sortEvaluationLiteral = null;
 	}
 
 	/* (non-Javadoc)
@@ -80,44 +94,6 @@ public abstract class AbstractQueryObject implements IQuerySet {
 	}
 
 	/* (non-Javadoc)
-	 * @see org.saiku.query.IQuerySet#isNonEmpty()
-	 */
-	@Override
-	public boolean isNonEmpty() {
-		return nonEmpty;
-	}
-
-	/* (non-Javadoc)
-	 * @see org.saiku.query.IQuerySet#setNonEmpty(boolean)
-	 */
-	@Override
-	public void setNonEmpty(boolean nonEmpty) {
-		this.nonEmpty = nonEmpty;
-		if (!nonEmpty) {
-			this.nonEmptyMeasure = null;
-		}
-
-	}
-
-	/* (non-Javadoc)
-	 * @see org.saiku.query.IQuerySet#setNonEmpty(java.lang.String)
-	 */
-	@Override
-	public void setNonEmpty(String measureUniqueName) {
-		this.nonEmpty = true;
-		this.nonEmptyMeasure = measureUniqueName;
-
-	}
-
-	/* (non-Javadoc)
-	 * @see org.saiku.query.IQuerySet#getNonEmptyMeasureLiteral()
-	 */
-	@Override
-	public String getNonEmptyMeasureLiteral() {
-		return nonEmptyMeasure;
-	}
-
-	/* (non-Javadoc)
 	 * @see org.saiku.query.IQuerySet#setMdxSetExpression(java.lang.String)
 	 */
 	@Override
@@ -139,9 +115,27 @@ public abstract class AbstractQueryObject implements IQuerySet {
 	 */
 	@Override
 	public boolean isMdxSetExpression() {
-		return this.mdxExpression == null;
+		return this.mdxExpression != null;
 	}
 	
+	@Override
+	public void addFilter(IFilterFunction filter) {
+		filters.add(filter);
+	}
+	
+	@Override
+	public void setFilter(int index, IFilterFunction filter) {
+		filters.set(index, filter);
+	}
+
+	@Override
+	public List<IFilterFunction> getFilters() {
+		return filters;
+	}
+	@Override
+	public void clearFilters() {
+		filters.clear();
+	}
 	
 
 	/* (non-Javadoc)
@@ -155,9 +149,6 @@ public abstract class AbstractQueryObject implements IQuerySet {
 				+ ((hierarchizeMode == null) ? 0 : hierarchizeMode.hashCode());
 		result = prime * result
 				+ ((mdxExpression == null) ? 0 : mdxExpression.hashCode());
-		result = prime * result + (nonEmpty ? 1231 : 1237);
-		result = prime * result
-				+ ((nonEmptyMeasure == null) ? 0 : nonEmptyMeasure.hashCode());
 		result = prime * result
 				+ ((sortOrder == null) ? 0 : sortOrder.hashCode());
 		return result;
@@ -182,13 +173,6 @@ public abstract class AbstractQueryObject implements IQuerySet {
 				return false;
 		} else if (!mdxExpression.equals(other.mdxExpression))
 			return false;
-		if (nonEmpty != other.nonEmpty)
-			return false;
-		if (nonEmptyMeasure == null) {
-			if (other.nonEmptyMeasure != null)
-				return false;
-		} else if (!nonEmptyMeasure.equals(other.nonEmptyMeasure))
-			return false;
 		if (sortOrder != other.sortOrder)
 			return false;
 		if (!StringUtils.equals(getName(), other.getName()))
@@ -196,26 +180,5 @@ public abstract class AbstractQueryObject implements IQuerySet {
 		return true;
 	}
 
-	@Override
-	public void addFilterExpression(String filterMdxExpression) {
-		filterExpressions.add(filterMdxExpression);
-		
-	}
-
-	@Override
-	public void setFilterExpression(int index, String filterMdxExpression) {
-		filterExpressions.add(index, filterMdxExpression);
-		
-	}
-
-	@Override
-	public List<String> getFilterExpressions() {
-		return filterExpressions;
-	}
-
-	@Override
-	public void clearFilterExpressions() {
-		filterExpressions.clear();
-	}
 
 }

@@ -61,6 +61,43 @@ public class QueryLevel extends AbstractQueryObject implements Named {
     		exclusions.add(m);
     	}
     }
+    
+
+    /* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((level == null) ? 0 : level.getUniqueName().hashCode());
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		QueryLevel other = (QueryLevel) obj;
+		if (level == null) {
+			if (other.level != null)
+				return false;
+		} else if (!level.getUniqueName().equals(other.getLevel().getUniqueName()))
+			return false;
+		return true;
+	}
+	
+	@Override
+	public String toString() {
+		return level.getUniqueName();
+	}
 }
 
 

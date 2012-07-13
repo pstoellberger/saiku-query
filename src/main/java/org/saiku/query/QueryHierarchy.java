@@ -13,7 +13,8 @@ import org.olap4j.metadata.Member;
 import org.olap4j.metadata.NamedList;
 
 public class QueryHierarchy extends AbstractQueryObject implements Named {
-    protected QueryAxis axis;
+
+	protected QueryAxis axis;
     private final Query query;
 	private final Hierarchy hierarchy;
 	
@@ -89,6 +90,14 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
     	return activeLevels;
     }
     
+    
+    public void includeLevel(String levelName) {
+    	QueryLevel ql = queryLevels.get(levelName);
+    	if (!activeLevels.contains(ql.getName())) {
+    		activeLevels.add(ql);
+    	}
+    }
+
     public void includeLevel(Level l) throws OlapException {
     	if (!l.getHierarchy().equals(hierarchy)) {
     		throw new OlapException(
@@ -136,7 +145,21 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
     	ql.include(m);
     }
     
-    public void exclude(List<Member> members) {
+    public void exclude(String uniqueMemberName) throws OlapException {
+    	List<IdentifierSegment> nameParts = IdentifierParser.parseIdentifier(uniqueMemberName);
+    	this.exclude(nameParts);
+    }
+    
+    public void exclude(List<IdentifierSegment> nameParts) throws OlapException {
+        Member member = this.query.getCube().lookupMember(nameParts);
+        if (member == null) {
+            throw new OlapException(
+                "Unable to find a member with name " + nameParts);
+        }
+        this.exclude(member);
+    }
+    
+    public void excludeMembers(List<Member> members) {
     	for (Member m : members) {
     		exclude(m);
     	}
@@ -153,6 +176,44 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
     	}
     	ql.exclude(m);
     }
+    
+    /* (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((hierarchy == null) ? 0 : hierarchy.getUniqueName().hashCode());
+		return result;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		QueryHierarchy other = (QueryHierarchy) obj;
+		if (hierarchy == null) {
+			if (other.hierarchy != null)
+				return false;
+		} else if (!hierarchy.getUniqueName().equals(other.hierarchy.getUniqueName()))
+			return false;
+		return true;
+	}
+	
+	
+	@Override
+	public String toString() {
+		return hierarchy.getUniqueName();
+	}
+
 }
 
 

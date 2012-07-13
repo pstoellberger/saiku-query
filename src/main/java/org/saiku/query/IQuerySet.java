@@ -2,6 +2,8 @@ package org.saiku.query;
 
 import java.util.List;
 
+import org.saiku.query.mdx.IFilterFunction;
+
 public interface IQuerySet {
 	
 	/**
@@ -16,6 +18,14 @@ public interface IQuerySet {
      * @param order The {@link SortOrder} to use.
      */
     public void sort(SortOrder order);
+    
+    /**
+     * Sorts the Hierarchy members by name in the
+     * order supplied as a parameter using the given
+     * sort evaluation literal
+     * @param order The {@link SortOrder} to use.
+     */
+    public void sort(SortOrder order, String sortEvaluationLiteral);
 
     /**
      * Returns the current order in which the
@@ -23,6 +33,12 @@ public interface IQuerySet {
      * @return A value of {@link SortOrder}
      */
     public SortOrder getSortOrder();
+    
+    /**
+     * Returns the current literal used for sorting
+     * @return A sort evaluation literal
+     */
+    public String getSortEvaluationLiteral();
 
     /**
      * Clears the current sorting settings.
@@ -84,43 +100,6 @@ public interface IQuerySet {
     }
     
     /**
-     * Returns whether this Query Group filters out empty rows.
-     * If true, axis filters out empty rows, and the MDX to evaluate the axis
-     * will be generated with the "NON EMPTY" expression.
-     * Other Query Elements will use Filter( Not IsEmpty (<query group set>), <measure>)
-     *
-     * @return Whether this query group should filter out empty rows
-     *
-     * @see #setNonEmpty(boolean)
-     */
-    public boolean isNonEmpty();
-    
-    /**
-     * Returns the measure literal used for filtering the query group for empty cells
-     * @return nonEmptyMeasure - non empty measure literal
-     */
-    public String getNonEmptyMeasureLiteral();
-
-    /**
-     * Sets whether this Query Group filters out empty rows.
-     *
-     * @param nonEmpty Whether this axis should filter out empty rows
-     *
-     * @see #isNonEmpty()
-     */
-    public void setNonEmpty(boolean nonEmpty);
-    
-    /**
-     * Sets the query group to filter out empty rows based on the 
-     * given measure name
-     * 
-     * @param measureUniqueName
-     * 
-     * @see #setNonEmpty(boolean)
-     */
-    public void setNonEmpty(String measureUniqueName);
-    
-    /**
      * Instead of using the query objects you can set an mdx expression
      * that represents the current query object.
      * NOTE: Since we cannot validate if the mdx set makes sense at this point
@@ -139,9 +118,9 @@ public interface IQuerySet {
     public boolean isMdxSetExpression();
     
     
-    public void addFilterExpression(String filterMdxExpression);
-    public void setFilterExpression(int index, String filterMdxExpression);
-    public List<String> getFilterExpressions();
-    public void clearFilterExpressions();
+    public void addFilter(IFilterFunction filter);
+    public void setFilter(int index, IFilterFunction filter);
+    public List<IFilterFunction> getFilters();
+    public void clearFilters();
     
 }
