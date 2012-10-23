@@ -55,7 +55,7 @@ public class QueryLevel extends AbstractQueryObject implements Named {
     
     protected void exclude(Member m) {
     	if(inclusions.contains(m)) {
-    		inclusions.add(m);
+    		inclusions.remove(m);
     	}
     	if(!exclusions.contains(m)) {
     		exclusions.add(m);

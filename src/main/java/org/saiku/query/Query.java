@@ -11,11 +11,19 @@ import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
 import org.olap4j.OlapStatement;
+import org.olap4j.impl.IdentifierParser;
+import org.olap4j.impl.NamedListImpl;
+import org.olap4j.mdx.IdentifierNode;
 import org.olap4j.mdx.SelectNode;
 import org.olap4j.metadata.Catalog;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
+import org.olap4j.metadata.Member.Type;
+import org.olap4j.metadata.NamedList;
+import org.olap4j.metadata.Property;
+import org.saiku.query.IQuerySet.HierarchizeMode;
+import org.saiku.query.metadata.CalculatedMember;
 
 public class Query {
 
@@ -34,7 +42,8 @@ public class Query {
      */
     protected boolean selectDefaultMembers = true;
     private final OlapConnection connection;
-
+	private HierarchizeMode defaultHierarchizeMode = HierarchizeMode.PRE;
+	
     /**
      * Constructs a Query object.
      * @param name Any arbitrary name to give to this query.
@@ -212,6 +221,44 @@ public class Query {
     public Map<Axis, QueryAxis> getAxes() {
         return axes;
     }
+    
+    public CalculatedMember createCalculatedMember(
+    		QueryHierarchy hierarchy,
+    		String name,
+    		String formula,
+    		Map<Property, Object> properties) 
+    {
+    	Hierarchy h = hierarchy.getHierarchy();
+    	String uniqueName = IdentifierNode.ofNames(h.getName(), name).toString();
+    	CalculatedMember cm = new CalculatedMember(
+    			h.getDimension(), 
+    			h, 
+    			name, 
+    			name,
+    			name,
+    			uniqueName,
+    			Type.FORMULA,
+    			formula,
+    			null);
+    	addCalculatedMember(hierarchy, cm);
+    	return cm;
+    }
+    
+    public void addCalculatedMember(QueryHierarchy hierarchy, CalculatedMember cm) {
+    	hierarchy.addCalculatedMember(cm);
+    }
+    
+    public NamedList<CalculatedMember> getCalculatedMembers(QueryHierarchy hierarchy) {
+    	return hierarchy.getCalculatedMembers();
+    }
+    
+    public NamedList<CalculatedMember> getCalculatedMembers() {
+    	NamedList<CalculatedMember> cm = new NamedListImpl<CalculatedMember>();
+    	for (QueryHierarchy h : hierarchyMap.values()) {
+    		cm.addAll(h.getCalculatedMembers());
+    	}
+    	return cm;
+    }
 
     /**
      * Returns the fictional axis into which all unused hierarchies are stored.
@@ -300,6 +347,14 @@ public class Query {
      */
     public void setSelectDefaultMembers(boolean selectDefaultMembers) {
         this.selectDefaultMembers = selectDefaultMembers;
+    }
+    
+    public void setDefaultHierarchizeMode(HierarchizeMode mode) {
+    	this.defaultHierarchizeMode = mode;
+    }
+    
+    public HierarchizeMode getDefaultHierarchizeMode() {
+    	return this.defaultHierarchizeMode;
     }
     
 //  /**

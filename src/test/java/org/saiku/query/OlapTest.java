@@ -16,6 +16,7 @@ import org.saiku.query.IQuerySet.HierarchizeMode;
 import org.saiku.query.mdx.GenericFilter;
 import org.saiku.query.mdx.IFilterFunction.MdxFunctionType;
 import org.saiku.query.mdx.NFilter;
+import org.saiku.query.metadata.CalculatedMember;
 
 public class OlapTest extends TestCase {
 	
@@ -47,10 +48,10 @@ public class OlapTest extends TestCase {
 			qa.setHierarchizeMode(HierarchizeMode.PRE);
 			SelectNode mdx = query.getSelect();
 	        String mdxString = mdx.toString();
-	        System.out.println("MDX: " + mdxString);
+	        System.out.println("MDX:\n " + mdxString);
 	        CellSet results = query.execute();
 	        String s = TestContext.toString(results);
-	        System.out.println("RESULTS: " + s);
+	        System.out.println("RESULTS:\n " + s);
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -67,9 +68,10 @@ public class OlapTest extends TestCase {
 			QueryHierarchy products = query.getHierarchy("Product");
 			
 			products.includeLevel("Product Family");
-			products.exclude("[Product].[Drink]");
+//			products.exclude("[Product].[Drink]");
 			products.exclude("[Product].[Food]");
 			products.include("[Product].[Drink].[Beverages]");
+			products.include("[Product].[Non-Consumable].[Checkout]");
 			qa.addHierarchy(products);
 			
 			
@@ -79,6 +81,47 @@ public class OlapTest extends TestCase {
 	        CellSet results = query.execute();
 	        String s = TestContext.toString(results);
 	        System.out.println("RESULTS: " + s);
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void testBasicCalculatedMember() {
+		
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query", cube);
+			QueryAxis columns = query.getAxis(Axis.COLUMNS);
+			QueryAxis rows = query.getAxis(Axis.ROWS);
+			QueryHierarchy products = query.getHierarchy("Product");
+			
+			CalculatedMember cm =
+					query.createCalculatedMember(products, 
+												"Consumable", 
+												"Aggregate({Product.Drink, Product.Food})",  
+												null);
+			products.includeCalculatedMember(cm);
+			products.includeLevel("Product Family");
+			products.exclude("[Product].[Non-Consumable]");
+			NFilter top2filter = new NFilter(MdxFunctionType.TopCount, 2, "Measures.[Unit Sales]");
+			products.addFilter(top2filter);
+			
+			columns.addHierarchy(products);
+			
+			
+			QueryHierarchy gender = query.getHierarchy("Gender");
+			gender.include("[Gender].[F]");
+			rows.addHierarchy(gender);
+						
+			
+			SelectNode mdx = query.getSelect();
+	        String mdxString = mdx.toString();
+	        System.out.println("Saiku MDX:\n " + mdxString);
+	        CellSet results = query.execute();
+	        String s = TestContext.toString(results);
+	        System.out.println("RESULTS:\n " + s);
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

@@ -1,5 +1,6 @@
 package org.saiku.query;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.olap4j.OlapException;
@@ -11,6 +12,7 @@ import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.NamedList;
+import org.saiku.query.metadata.CalculatedMember;
 
 public class QueryHierarchy extends AbstractQueryObject implements Named {
 
@@ -21,6 +23,10 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
 	private NamedList<QueryLevel> queryLevels = new NamedListImpl<QueryLevel>();
 	
 	private NamedList<QueryLevel> activeLevels = new NamedListImpl<QueryLevel>();
+	
+	private NamedList<CalculatedMember> calculatedMembers = new NamedListImpl<CalculatedMember>();
+
+	private NamedList<CalculatedMember> activeCalculatedMembers = new NamedListImpl<CalculatedMember>();
 
     public QueryHierarchy(Query query, Hierarchy hierarchy) {
         super();
@@ -86,6 +92,19 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
 //    	return queryLevels.get(level.getName());
 //    }
     
+    public void addCalculatedMember(CalculatedMember cm) {
+    	calculatedMembers.add(cm);
+    }
+    
+    public NamedList<CalculatedMember> getCalculatedMembers() {
+    	return calculatedMembers;
+    }
+    
+    public List<CalculatedMember> getActiveCalculatedMembers() {
+    	return activeCalculatedMembers;
+    }
+    
+    
     public List<QueryLevel> getActiveQueryLevels() {
     	return activeLevels;
     }
@@ -93,7 +112,7 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
     
     public void includeLevel(String levelName) {
     	QueryLevel ql = queryLevels.get(levelName);
-    	if (!activeLevels.contains(ql.getName())) {
+    	if (!activeLevels.contains(ql)) {
     		activeLevels.add(ql);
     	}
     }
@@ -105,14 +124,14 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
     				+ " on hierarchy " + hierarchy.getUniqueName());
     	}
     	QueryLevel ql = queryLevels.get(l.getName());
-    	if (!activeLevels.contains(l.getName())) {
+    	if (!activeLevels.contains(l)) {
     		activeLevels.add(ql);
     	}
     }
     
     public void includeMembers(List<Member> members) throws OlapException {
     	for (Member m : members) {
-    		include(m);
+    		includeMember(m);
     	}
     }
 
@@ -127,11 +146,23 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
             throw new OlapException(
                 "Unable to find a member with name " + nameParts);
         }
-        this.include(member);
+        this.includeMember(member);
     }
 
 
-    public void include(Member m) throws OlapException {
+    public void includeCalculatedMember(CalculatedMember m) throws OlapException {
+    	Hierarchy h = m.getHierarchy();
+    	if (!h.equals(hierarchy)) {
+    		throw new OlapException(
+    				"You cannot include the calculated member " + m.getUniqueName() 
+    				+ " on hierarchy " + hierarchy.getUniqueName());
+    	}
+    	if(!calculatedMembers.contains(m)) {
+    		calculatedMembers.add(m);
+    	}
+    	activeCalculatedMembers.add(m);
+    }
+    public void includeMember(Member m) throws OlapException {
     	Level l = m.getLevel();
     	if (!l.getHierarchy().equals(hierarchy)) {
     		throw new OlapException(
@@ -139,7 +170,7 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
     				+ " on hierarchy " + hierarchy.getUniqueName());
     	}
     	QueryLevel ql = queryLevels.get(l.getName());
-    	if (!activeLevels.contains(l.getName())) {
+    	if (!activeLevels.contains(ql)) {
     		activeLevels.add(ql);
     	}
     	ql.include(m);
@@ -171,7 +202,7 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
     		throw new IllegalArgumentException("You cannot exclude member " + m.getUniqueName() + " on hierarchy " + hierarchy.getUniqueName());
     	}
     	QueryLevel ql = queryLevels.get(l.getName());
-    	if (!activeLevels.contains(l.getName())) {
+    	if (!activeLevels.contains(ql)) {
     		activeLevels.add(ql);
     	}
     	ql.exclude(m);
