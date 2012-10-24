@@ -19,6 +19,7 @@ import org.olap4j.metadata.Catalog;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
+import org.olap4j.metadata.Member;
 import org.olap4j.metadata.Member.Type;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Property;
@@ -229,14 +230,35 @@ public class Query {
     		Map<Property, Object> properties) 
     {
     	Hierarchy h = hierarchy.getHierarchy();
-    	String uniqueName = IdentifierNode.ofNames(h.getName(), name).toString();
     	CalculatedMember cm = new CalculatedMember(
     			h.getDimension(), 
     			h, 
     			name, 
     			name,
     			name,
-    			uniqueName,
+    			null,
+    			Type.FORMULA,
+    			formula,
+    			null);
+    	addCalculatedMember(hierarchy, cm);
+    	return cm;
+    }
+    
+    public CalculatedMember createCalculatedMember(
+    		QueryHierarchy hierarchy,
+    		Member parentMember,
+    		String name,
+    		String formula,
+    		Map<Property, Object> properties) 
+    {
+    	Hierarchy h = hierarchy.getHierarchy();
+    	CalculatedMember cm = new CalculatedMember(
+    			h.getDimension(), 
+    			h, 
+    			name, 
+    			name,
+    			name,
+    			parentMember,
     			Type.FORMULA,
     			formula,
     			null);

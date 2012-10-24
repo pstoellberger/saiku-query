@@ -1,6 +1,5 @@
 package org.saiku.query;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.olap4j.OlapException;
@@ -46,7 +45,11 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
         return axis;
     }
     
-    public void setAxis(QueryAxis axis) {
+    /**
+     * Only internal use!
+     * @param axis
+     */
+    protected void setAxis(QueryAxis axis) {
         this.axis = axis;
     }
 

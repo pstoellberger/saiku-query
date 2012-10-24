@@ -1,11 +1,15 @@
 package org.saiku.query.metadata;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.olap4j.OlapException;
+import org.olap4j.impl.IdentifierParser;
 import org.olap4j.impl.Named;
+import org.olap4j.mdx.IdentifierNode;
+import org.olap4j.mdx.IdentifierSegment;
 import org.olap4j.mdx.ParseTreeNode;
 import org.olap4j.metadata.Dimension;
 import org.olap4j.metadata.Hierarchy;
@@ -37,7 +41,7 @@ public class CalculatedMember implements Member, Named {
 			String name,
 			String caption,
 			String description,
-			String uniqueName,
+			Member parentMember,
 			Type memberType,
 			String formula,
 			Map<Property, String> properties)
@@ -48,9 +52,26 @@ public class CalculatedMember implements Member, Named {
 		this.name = name;
 		this.caption = caption;
 		this.description = description;
-		this.uniqueName = uniqueName;
 		this.memberType = memberType;
 		this.formula = formula;
+		if (parentMember == null) {
+			this.uniqueName = IdentifierNode.ofNames(hierarchy.getName(), name).toString();
+		} else {
+			IdentifierNode parent = IdentifierNode.parseIdentifier(parentMember.getUniqueName());
+			IdentifierNode cm = IdentifierNode.ofNames(name);
+			List<IdentifierSegment> segmentList = new ArrayList<IdentifierSegment>();
+			segmentList.addAll(parent.getSegmentList());
+			segmentList.addAll(cm.getSegmentList());
+	        StringBuilder buf = new StringBuilder();
+	        for (IdentifierSegment segment : segmentList) {
+	            if (buf.length() > 0) {
+	                buf.append('.');
+	            }
+	            buf.append(segment.toString());
+	        }
+	        this.uniqueName = buf.toString();
+
+		}
 		if (properties != null) {
 			this.properties.putAll(properties);
 		}

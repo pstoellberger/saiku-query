@@ -159,7 +159,6 @@ abstract class Olap4jNodeConverter {
 			return null;
 		}
 
-		System.out.println("Processing Axis: " + axis.getName());
 		ParseTreeNode axisExpression = null;
 		if (!axis.isMdxSetExpression()) {
 			List<ParseTreeNode> hierarchies = new ArrayList<ParseTreeNode>();
@@ -210,15 +209,23 @@ abstract class Olap4jNodeConverter {
 				levelNode = toOlap4j(levelNode, l);
 				levels.add(levelNode);
 			}
-			ParseTreeNode levelSet = generateListSetCall(levels);
-			if (inclusions.size() > 0) {
-				ParseTreeNode existSet = toOlap4jMemberSet(inclusions);
-				h.setHierarchizeMode(h.getQuery().getDefaultHierarchizeMode());
-				levelSet = new CallNode(null, "Exists", Syntax.Function, levelSet, existSet);
-			}
-			if (exclusions.size() > 0) {
-				ParseTreeNode exceptSet = toOlap4jMemberSet(exclusions);
-				levelSet =  new CallNode(null, "Except", Syntax.Function, levelSet, exceptSet);			
+			
+			ParseTreeNode levelSet = null;
+			if (levels.size() > 0) {
+				levelSet = generateListSetCall(levels);
+				if (inclusions.size() > 0) {
+					ParseTreeNode memberSet = toOlap4jMemberSet(inclusions);
+					if (levels.size() > 1) {
+						h.setHierarchizeMode(h.getQuery().getDefaultHierarchizeMode());
+						levelSet = new CallNode(null, "Exists", Syntax.Function, levelSet, memberSet);						
+					} else {
+						levelSet = memberSet;
+					}
+				}
+				if (exclusions.size() > 0) {
+					ParseTreeNode exceptSet = toOlap4jMemberSet(exclusions);
+					levelSet =  new CallNode(null, "Except", Syntax.Function, levelSet, exceptSet);			
+				}
 			}
 			List<ParseTreeNode> cmNodes = new ArrayList<ParseTreeNode>();
 			for (CalculatedMember cm : h.getActiveCalculatedMembers()) {
@@ -241,7 +248,11 @@ abstract class Olap4jNodeConverter {
 			}
 			if (cmNodes.size() > 0) {
 				ParseTreeNode cmSet = generateListSetCall(cmNodes);
-				hierarchySet = generateSetCall(cmSet, levelSet);
+				if (levelSet != null) {
+					hierarchySet = generateSetCall(cmSet, levelSet);
+				} else {
+					hierarchySet = cmSet;
+				}
 			} else {
 				hierarchySet = levelSet;	
 			}

@@ -72,8 +72,7 @@ public class QueryAxis extends AbstractQueryObject {
      * to this axis.
      */
     public void addHierarchy(QueryHierarchy hierarchy) {
-    	hierarchy.setAxis(this);
-        this.getQueryHierarchies().add(hierarchy);
+    	addHierarchy(-1, hierarchy);
     }
 
     /**
@@ -85,9 +84,24 @@ public class QueryAxis extends AbstractQueryObject {
      * the QueryHierarchy
      */
     public void addHierarchy(int index, QueryHierarchy hierarchy) {
-    	hierarchy.setAxis(this);
-        this.getQueryHierarchies().add(index, hierarchy);
+        if (this.getQueryHierarchies().contains(hierarchy)) {
+            throw new IllegalStateException(
+                "hierarchy already on this axis");
+        }
+        if (hierarchy.getAxis() != null
+            && hierarchy.getAxis() != QueryAxis.this)
+        {
+            // careful! potential for loop
+        	hierarchy.getAxis().getQueryHierarchies().remove(hierarchy);
+        }
+        hierarchy.setAxis(QueryAxis.this);
+        if (index >= hierarchies.size() || index < 0) {
+        	hierarchies.add(hierarchy);
+        } else {
+        	hierarchies.add(index, hierarchy);
+        }
     }
+
 
     /**
      * Removes a {@link QueryHierarchy} object on this axis.
