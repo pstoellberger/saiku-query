@@ -1,45 +1,43 @@
 package org.saiku.query.metadata;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.olap4j.OlapException;
 import org.olap4j.impl.Named;
+import org.olap4j.impl.NamedListImpl;
 import org.olap4j.mdx.IdentifierNode;
-import org.olap4j.mdx.IdentifierSegment;
 import org.olap4j.mdx.ParseTreeNode;
+import org.olap4j.metadata.Datatype;
 import org.olap4j.metadata.Dimension;
 import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
-import org.olap4j.metadata.Measure.Aggregator;
+import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Property;
 
-public class CalculatedMember implements Member, Named, Calculated {
+public class CalculatedMeasure implements Measure, Named, Calculated {
 
 
 	private Dimension dimension;
 	private Hierarchy hierarchy;
 	private String name;
 	private String uniqueName;
-	private Type memberType;
 	private String formula;
 	
 	private Map<Property, Object> properties = new HashMap<Property, Object>();
 	private String description;
 	private Level level;
+	private Datatype datatype;
 
 
-	public CalculatedMember(
+	public CalculatedMeasure(
 			Dimension dimension,
 			Hierarchy hierarchy,
 			String name,
 			String description,
-			Member parentMember,
-			Type memberType,
 			String formula,
 			Map<Property, String> properties)
 	{
@@ -48,29 +46,8 @@ public class CalculatedMember implements Member, Named, Calculated {
 		this.level = hierarchy.getLevels().get(0);
 		this.name = name;
 		this.description = description;
-		this.memberType = memberType;
 		this.formula = formula;
-		if (parentMember == null) {
-			this.uniqueName = IdentifierNode.ofNames(hierarchy.getName(), name).toString();
-		} else {
-			IdentifierNode parent = IdentifierNode.parseIdentifier(parentMember.getUniqueName());
-			IdentifierNode cm = IdentifierNode.ofNames(name);
-			List<IdentifierSegment> segmentList = new ArrayList<IdentifierSegment>();
-			segmentList.addAll(parent.getSegmentList());
-			segmentList.addAll(cm.getSegmentList());
-	        StringBuilder buf = new StringBuilder();
-	        for (IdentifierSegment segment : segmentList) {
-	            if (buf.length() > 0) {
-	                buf.append('.');
-	            }
-	            buf.append(segment.toString());
-	        }
-	        this.uniqueName = buf.toString();
-
-		}
-		if (properties != null) {
-			this.properties.putAll(properties);
-		}
+		this.uniqueName = IdentifierNode.ofNames(hierarchy.getName(), name).toString();
 	}
 	
 
@@ -84,30 +61,24 @@ public class CalculatedMember implements Member, Named, Calculated {
 		return hierarchy;
 	}
 	
-	/* (non-Javadoc)
-	 * @see org.saiku.query.metadata.Calculated#getFormula()
-	 */
-	@Override
 	public String getFormula() {
 		return formula;
 	}
 
 	public Type getMemberType() {
-		return memberType;
+		return Type.FORMULA;
 	}
 
 
-    /* (non-Javadoc)
-	 * @see org.saiku.query.metadata.Calculated#getPropertyValueMap()
-	 */
-    @Override
-	public Map<Property, Object> getPropertyValueMap() {
+    public Map<Property, Object> getPropertyValueMap() {
         return properties;
     }
     
 	@Override
 	public NamedList<Property> getProperties() {
-		return level.getProperties();
+		NamedList<Property> p = new NamedListImpl(properties.keySet());
+		return p;
+		
 	}
 
 
@@ -139,10 +110,6 @@ public class CalculatedMember implements Member, Named, Calculated {
 	}
 
 
-	/* (non-Javadoc)
-	 * @see org.saiku.query.metadata.Calculated#getUniqueName()
-	 */
-	@Override
 	public String getUniqueName() {
 		return uniqueName;
 	}
@@ -168,7 +135,7 @@ public class CalculatedMember implements Member, Named, Calculated {
 
 	@Override
 	public int getChildMemberCount() throws OlapException {
-		return 0;
+		throw new UnsupportedOperationException();
 	}
 
 
@@ -189,7 +156,7 @@ public class CalculatedMember implements Member, Named, Calculated {
 
 	@Override
 	public int getDepth() {
-		return 0;
+		throw new UnsupportedOperationException();
 	}
 
 
@@ -271,6 +238,16 @@ public class CalculatedMember implements Member, Named, Calculated {
 
 
 
+	@Override
+	public Datatype getDatatype() {
+	        if (datatype  != null) {
+	        	return datatype;
+	        }
+	        return Datatype.STRING;
+	}
+
+
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */
@@ -296,7 +273,7 @@ public class CalculatedMember implements Member, Named, Calculated {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		CalculatedMember other = (CalculatedMember) obj;
+		CalculatedMeasure other = (CalculatedMeasure) obj;
 		if (uniqueName == null) {
 			if (other.uniqueName != null)
 				return false;
@@ -304,7 +281,6 @@ public class CalculatedMember implements Member, Named, Calculated {
 			return false;
 		return true;
 	}
-
 	
 
 }

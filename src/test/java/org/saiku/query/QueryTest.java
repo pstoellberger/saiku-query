@@ -1,23 +1,34 @@
 package org.saiku.query;
 
+import java.sql.ResultSet;
+import java.util.Arrays;
+import java.util.List;
+
 import junit.framework.TestCase;
 
 import org.olap4j.Axis;
+import org.olap4j.Cell;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
+import org.olap4j.OlapStatement;
 import org.olap4j.OlapWrapper;
+import org.olap4j.Position;
 import org.olap4j.impl.IdentifierParser;
 import org.olap4j.mdx.SelectNode;
 import org.olap4j.metadata.Catalog;
 import org.olap4j.metadata.Cube;
+import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Schema;
 import org.saiku.query.IQuerySet.HierarchizeMode;
+import org.saiku.query.QueryDetails.Location;
 import org.saiku.query.mdx.GenericFilter;
 import org.saiku.query.mdx.IFilterFunction.MdxFunctionType;
 import org.saiku.query.mdx.NFilter;
+import org.saiku.query.mdx.NameFilter;
+import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
 
 public class QueryTest extends TestCase {
@@ -285,7 +296,249 @@ public class QueryTest extends TestCase {
 			fail();
 		}
 	}
+	
+	public void testCalculatedMeasure() {
 
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query2", cube);
+			QueryAxis rows = query.getAxis(Axis.ROWS);
+			QueryAxis columns = query.getAxis(Axis.COLUMNS);
+			QueryHierarchy products = query.getHierarchy("Product");
+			products.include("[Product].[Drink]");
+			rows.addHierarchy(products);
+
+			CalculatedMeasure cm =
+					query.createCalculatedMeasure(
+							"Double Profit", 
+							"( [Measures].[Store Sales] - [Measures].[Store Cost]) * 2",  
+							null);
+
+			assertEquals(query.getCalculatedMeasures().size(), 1);
+			
+			query.getDetails().add(cm);
+			
+			Measure m = cube.getMeasures().get(0);
+			
+			query.getDetails().add(m);
+			
+			SelectNode mdx = query.getSelect();
+			String mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestContext.toJavaString(mdxString));
+			}
+			String expectedQuery = 
+	                "WITH\n"
+	                        + "MEMBER [Measures].[Double Profit] AS\n"
+	                        + "    (([Measures].[Store Sales] - [Measures].[Store Cost]) * 2)\n"
+	                        + "SET [AxisROWS] AS\n"
+	                        + "    {[Product].[Drink]}\n"
+	                        + "SELECT\n"
+	                        + "{[Measures].[Double Profit], [Measures].[Unit Sales]} ON COLUMNS,\n"
+	                        + "[AxisROWS] ON ROWS\n"
+	                        + "FROM [Sales]";
+	                        
+			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+
+			CellSet results = query.execute();
+			String s = TestContext.toString(results);
+			TestContext.assertEqualsVerbose(
+	                "Axis #0:\n"
+	                        + "{}\n"
+	                        + "Axis #1:\n"
+	                        + "{[Measures].[Double Profit]}\n"
+	                        + "{[Measures].[Unit Sales]}\n"
+	                        + "Axis #2:\n"
+	                        + "{[Product].[Drink]}\n"
+	                        + "Row #0: 58,717.95\n"
+	                        + "Row #0: 24,597\n",
+							s);
+
+			
+			QueryHierarchy gender = query.getHierarchy("Gender");
+			gender.includeLevel("Gender");
+			columns.addHierarchy(gender);
+			mdx = query.getSelect();
+			mdxString = mdx.toString();
+			expectedQuery = 
+		            "WITH\n"
+		                    + "SET [AxisCOLUMNS] AS\n"
+		                    + "    {[Gender].[Gender].Members}\n"
+		                    + "MEMBER [Measures].[Double Profit] AS\n"
+		                    + "    (([Measures].[Store Sales] - [Measures].[Store Cost]) * 2)\n"
+		                    + "SET [AxisROWS] AS\n"
+		                    + "    {[Product].[Drink]}\n"
+		                    + "SELECT\n"
+		                    + "CrossJoin([AxisCOLUMNS], {[Measures].[Double Profit], [Measures].[Unit Sales]}) ON COLUMNS,\n"
+		                    + "[AxisROWS] ON ROWS\n"
+		                    + "FROM [Sales]";
+	                        
+			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+
+			query.getDetails().setLocation(Location.TOP);
+			mdx = query.getSelect();
+			mdxString = mdx.toString();
+			expectedQuery = 
+		            "WITH\n"
+		                    + "SET [AxisCOLUMNS] AS\n"
+		                    + "    {[Gender].[Gender].Members}\n"
+		                    + "MEMBER [Measures].[Double Profit] AS\n"
+		                    + "    (([Measures].[Store Sales] - [Measures].[Store Cost]) * 2)\n"
+		                    + "SET [AxisROWS] AS\n"
+		                    + "    {[Product].[Drink]}\n"
+		                    + "SELECT\n"
+		                    + "CrossJoin({[Measures].[Double Profit], [Measures].[Unit Sales]}, [AxisCOLUMNS]) ON COLUMNS,\n"
+		                    + "[AxisROWS] ON ROWS\n"
+		                    + "FROM [Sales]";
+	                        
+			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			
+			if (TestContext.DEBUG) {
+				System.out.println(TestContext.toJavaString(mdxString));
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
+	public void testVisualTotalsCaptionBug() {
+
+		try {
+			connection = context.createConnection();
+			final OlapWrapper wrapper = connection;
+			OlapConnection olapConnection = (OlapConnection) wrapper.unwrap(OlapConnection.class);
+			OlapStatement stmt = olapConnection.createStatement();
+			CellSet cellSet = stmt.executeOlapQuery(
+	                "select {[Measures].[Unit Sales]} on columns, "
+	                        + "{VisualTotals("
+	                        + "    {[Product].[Food].[Baked Goods].[Bread],"
+	                        + "     [Product].[Food].[Baked Goods].[Bread].[Bagels],"
+	                        + "     [Product].[Food].[Baked Goods].[Bread].[Muffins]},"
+	                        + "     \"**Subtotal - *\")} on rows "
+	                        + "from [Sales]");
+			
+	        List<Position> positions = cellSet.getAxes().get(1).getPositions();
+	        Member member = positions.get(0).getMembers().get(0);
+	        assertEquals("*Subtotal - Bread", member.getName());
+	        assertEquals("*Subtotal - Bread", member.getCaption());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void testVisualTotalsHierarchizeBug() {
+
+		try {
+			connection = context.createConnection();
+			final OlapWrapper wrapper = connection;
+			OlapConnection olapConnection = (OlapConnection) wrapper.unwrap(OlapConnection.class);
+			OlapStatement stmt = olapConnection.createStatement();
+			CellSet cellSet = stmt.executeOlapQuery(
+	                "select {[Measures].[Unit Sales]} on columns, "
+	                        + "VisualTotals(Hierarchize("
+	                        + "    {[Product].[Product Family].Members,"
+	                        + "    [Product].[Drink].[Beverages],"
+	                        + "    [Product].[Drink].[Dairy]}"
+	                        + ", PRE)"
+	                        + "     ,\"**Subtotal - *\")"
+	                        + "                           on rows "
+	                        + "from [Sales]");
+			
+			String s = TestContext.toString(cellSet);
+			TestContext.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Measures].[Unit Sales]}\n"
+			                + "Axis #2:\n"
+			                + "{[Product].[*Subtotal - Drink]}\n"
+			                + "{[Product].[Drink].[Beverages]}\n"
+			                + "{[Product].[Drink].[Dairy]}\n"
+			                + "{[Product].[Food]}\n"
+			                + "{[Product].[Non-Consumable]}\n"
+			                + "Row #0: 17,759\n"
+			                + "Row #1: 13,573\n"
+			                + "Row #2: 4,186\n"
+			                + "Row #3: 191,940\n"
+			                + "Row #4: 50,236\n"
+			          ,s);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void testFilters() {
+
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query2", cube);
+			QueryAxis rows = query.getAxis(Axis.ROWS);
+			QueryAxis columns = query.getAxis(Axis.COLUMNS);
+			QueryHierarchy time = query.getHierarchy("Time");
+			time.includeLevel("Quarter");
+			time.addFilter(new NameFilter(time.getHierarchy(), "Q1", "Q2"));
+			
+			rows.addHierarchy(time);
+			
+			QueryHierarchy products = query.getHierarchy("Product");
+			products.include("[Product].[Drink]");
+			columns.addHierarchy(products);
+			
+			SelectNode mdx = query.getSelect();
+			String mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestContext.toJavaString(mdxString));
+			}
+			String expectedQuery = 
+					"WITH\n"
+			                + "SET [AxisCOLUMNS] AS\n"
+			                + "    {[Product].[Drink]}\n"
+			                + "SET [AxisROWS] AS\n"
+			                + "    Filter({[Time].[Quarter].Members}, (([Time].CurrentMember.Name  =  \"Q1\")  OR  ([Time].CurrentMember.Name  =  \"Q2\")))\n"
+			                + "SELECT\n"
+			                + "[AxisCOLUMNS] ON COLUMNS,\n"
+			                + "[AxisROWS] ON ROWS\n"
+			                + "FROM [Sales]";
+	                        
+			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+
+			CellSet results = query.execute();
+			String s = TestContext.toString(results);
+
+			TestContext.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Product].[Drink]}\n"
+			                + "Axis #2:\n"
+			                + "{[Time].[1997].[Q1]}\n"
+			                + "{[Time].[1997].[Q2]}\n"
+			                + "{[Time].[1998].[Q1]}\n"
+			                + "{[Time].[1998].[Q2]}\n"
+			                + "Row #0: 5,976\n"
+			                + "Row #1: 5,895\n"
+			                + "Row #2: \n"
+			                + "Row #3: \n",
+							s);
+
+			
+			if (TestContext.DEBUG) {
+				System.out.println(TestContext.toJavaString(mdxString));
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
+	
+	
+	
+	
+    
 	public Cube getFoodmartCube(String cubeName) throws Exception {
 		connection = context.createConnection();
 		final OlapWrapper wrapper = connection;

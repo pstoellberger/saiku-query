@@ -11,19 +11,19 @@ import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
 import org.olap4j.OlapStatement;
-import org.olap4j.impl.IdentifierParser;
 import org.olap4j.impl.NamedListImpl;
-import org.olap4j.mdx.IdentifierNode;
 import org.olap4j.mdx.SelectNode;
 import org.olap4j.metadata.Catalog;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
+import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.Member.Type;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Property;
 import org.saiku.query.IQuerySet.HierarchizeMode;
+import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
 
 public class Query {
@@ -37,6 +37,10 @@ public class Query {
     protected final Cube cube;
     protected Map<String, QueryHierarchy> hierarchyMap =
         new HashMap<String, QueryHierarchy>();
+    
+    protected NamedList<CalculatedMeasure> calculatedMeasures = new NamedListImpl<CalculatedMeasure>();
+    
+    protected QueryDetails details;
     /**
      * Whether or not to select the default hierarchy and default
      * member on a hierarchy if no explicit selections were performed.
@@ -74,6 +78,7 @@ public class Query {
         axes.put(Axis.COLUMNS, across);
         axes.put(Axis.ROWS, down);
         axes.put(Axis.FILTER, filter);
+        details = new QueryDetails(this, Axis.COLUMNS);
     }
 
     /**
@@ -235,7 +240,6 @@ public class Query {
     			h, 
     			name, 
     			name,
-    			name,
     			null,
     			Type.FORMULA,
     			formula,
@@ -256,7 +260,6 @@ public class Query {
     			h.getDimension(), 
     			h, 
     			name, 
-    			name,
     			name,
     			parentMember,
     			Type.FORMULA,
@@ -280,6 +283,52 @@ public class Query {
     		cm.addAll(h.getCalculatedMembers());
     	}
     	return cm;
+    }
+
+    public CalculatedMeasure createCalculatedMeasure(
+    		String name,
+    		String formula,
+    		Map<Property, Object> properties) 
+    {
+    	if (cube.getMeasures().size() > 0) {
+    		Measure first = cube.getMeasures().get(0);
+    		return createCalculatedMeasure(first.getHierarchy(), name, formula, properties);
+    	}
+    	throw new RuntimeException("There has to be at least one valid measure in the cube to create a calculated measure!");
+    }
+    
+    public CalculatedMeasure createCalculatedMeasure(
+    		Hierarchy measureHierarchy,
+    		String name,
+    		String formula,
+    		Map<Property, Object> properties) 
+    {
+    	CalculatedMeasure cm = new CalculatedMeasure(
+    			measureHierarchy.getDimension(), 
+    			measureHierarchy, 
+    			name, 
+    			name,
+    			formula,
+    			null);
+    	addCalculatedMeasure(cm);
+    	return cm;
+    }
+    
+    
+    public void addCalculatedMeasure(CalculatedMeasure cm) {
+    	calculatedMeasures.add(cm);
+    }
+    
+    public NamedList<CalculatedMeasure> getCalculatedMeasures() {
+    	return calculatedMeasures;
+    }
+    
+    public CalculatedMeasure getCalculatedMeasure(String name) {
+    	return calculatedMeasures.get(name);
+    }
+    
+    public QueryDetails getDetails() {
+    	return details;
     }
 
     /**

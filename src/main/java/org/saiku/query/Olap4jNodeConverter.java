@@ -41,10 +41,12 @@ import org.olap4j.mdx.WithSetNode;
 import org.olap4j.mdx.parser.MdxParser;
 import org.olap4j.mdx.parser.impl.DefaultMdxParserImpl;
 import org.olap4j.metadata.Level;
+import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.Property;
-import org.saiku.query.IQuerySet.HierarchizeMode;
 import org.saiku.query.mdx.IFilterFunction;
+import org.saiku.query.metadata.Calculated;
+import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
 
 /**
@@ -155,9 +157,6 @@ abstract class Olap4jNodeConverter {
 	 * It might return null if there are no dimensions placed on the axis.
 	 */
 	private static AxisNode toOlap4j(List<ParseTreeNode> withList, QueryAxis axis) {
-		if (axis.getQueryHierarchies().isEmpty() && !axis.isMdxSetExpression()) {
-			return null;
-		}
 
 		ParseTreeNode axisExpression = null;
 		if (!axis.isMdxSetExpression()) {
@@ -167,10 +166,7 @@ abstract class Olap4jNodeConverter {
 				ParseTreeNode hierarchyNode = toOlap4jHierarchy(withList, h);
 				hierarchies.add(hierarchyNode);
 			}
-			if (hierarchies.size() == 0) {
-				return null;
-			}
-			else if (hierarchies.size() == 1) {
+			if (hierarchies.size() == 1) {
 				axisExpression = hierarchies.get(0);
 			}
 			else if (hierarchies.size() > 1) {
@@ -181,10 +177,42 @@ abstract class Olap4jNodeConverter {
 
 		}
 		axisExpression = toOlap4j(axisExpression, axis);
-		WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
-		withList.add(withNode);
-		ParseTreeNode axisNode = withNode.getIdentifier();
-
+		ParseTreeNode axisNode = null;
+		if (axisExpression != null) {
+			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
+			withList.add(withNode);
+			axisNode = withNode.getIdentifier();
+		}
+		QueryDetails details = axis.getQuery().getDetails();
+		
+		if (details.getMeasures().size() > 0 && axis.getLocation().equals(details.getAxis())) {
+			for (Measure m : details.getMeasures()) {
+				if (m.isCalculatedInQuery()) {
+					WithMemberNode wm = toOlap4jCalculatedMember((CalculatedMeasure) m);
+					withList.add(wm);
+				}
+			}
+			
+			
+			ParseTreeNode measuresNode = toOlap4jMeasureSet(details.getMeasures());
+			if (axisNode == null) {
+				axisNode = measuresNode;
+			} else {
+				List<ParseTreeNode> axisNodes = new ArrayList<ParseTreeNode>();
+				if (details.getLocation().equals(QueryDetails.Location.TOP)) {
+					axisNodes.add(measuresNode);
+					axisNodes.add(axisNode);	
+				} else {
+					axisNodes.add(axisNode);
+					axisNodes.add(measuresNode);
+				}
+				axisNode = generateCrossJoin(axisNodes);
+			}
+		}
+		
+		if (axisNode == null) {
+			return null;
+		}
 		return new AxisNode(
 				null,
 				axis.isNonEmpty(),
@@ -229,20 +257,8 @@ abstract class Olap4jNodeConverter {
 			}
 			List<ParseTreeNode> cmNodes = new ArrayList<ParseTreeNode>();
 			for (CalculatedMember cm : h.getActiveCalculatedMembers()) {
-				ParseTreeNode formula = parser.parseExpression(cm.getFormula());
-				List<PropertyValueNode> propertyList = new ArrayList<PropertyValueNode>();
-				for (Entry<Property, Object> entry : cm.getPropertyValueMap().entrySet()) {
-					ParseTreeNode exp = parser.parseExpression(entry.getValue().toString());
-					String name = entry.getKey().getName();
-					PropertyValueNode prop = new PropertyValueNode(null, name, exp);
-					propertyList.add(prop);
-				}
-				WithMemberNode wm = new WithMemberNode(
-						null, 
-						IdentifierNode.parseIdentifier(cm.getUniqueName()), 
-						formula, 
-						propertyList);
-
+				
+				WithMemberNode wm = toOlap4jCalculatedMember(cm);
 				withList.add(wm);
 				cmNodes.add(wm.getIdentifier());
 			}
@@ -266,6 +282,23 @@ abstract class Olap4jNodeConverter {
 		return new CallNode(null, "Members", Syntax.Property, new LevelNode(null, level));
 	}
 
+	private static WithMemberNode toOlap4jCalculatedMember(Calculated cm) {
+		MdxParser parser = new DefaultMdxParserImpl();
+		ParseTreeNode formula = parser.parseExpression(cm.getFormula());
+		List<PropertyValueNode> propertyList = new ArrayList<PropertyValueNode>();
+		for (Entry<Property, Object> entry : cm.getPropertyValueMap().entrySet()) {
+			ParseTreeNode exp = parser.parseExpression(entry.getValue().toString());
+			String name = entry.getKey().getName();
+			PropertyValueNode prop = new PropertyValueNode(null, name, exp);
+			propertyList.add(prop);
+		}
+		WithMemberNode wm = new WithMemberNode(
+				null, 
+				IdentifierNode.parseIdentifier(cm.getUniqueName()), 
+				formula, 
+				propertyList);
+		return wm;
+	}
 
 	private static ParseTreeNode toOlap4jMemberSet(List<Member> members) {
 		List<ParseTreeNode> membernodes = new ArrayList<ParseTreeNode>();
@@ -275,6 +308,15 @@ abstract class Olap4jNodeConverter {
 		return generateListSetCall(membernodes);
 	}
 
+	private static ParseTreeNode toOlap4jMeasureSet(List<Measure> measures) {
+		List<ParseTreeNode> membernodes = new ArrayList<ParseTreeNode>();
+		for (Measure m : measures) {
+			membernodes.add(new MemberNode(null, m));
+		}
+		return generateListSetCall(membernodes);
+	}
+
+	
 	private static List<AxisNode> toOlap4j(List<ParseTreeNode> withList, List<QueryAxis> axes) {
 		final ArrayList<AxisNode> axisList = new ArrayList<AxisNode>();
 		for (QueryAxis axis : axes) {
