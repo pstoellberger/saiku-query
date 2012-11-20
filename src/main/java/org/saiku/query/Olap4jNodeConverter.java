@@ -22,7 +22,6 @@ package org.saiku.query;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map.Entry;
 
 import org.olap4j.Axis;
 import org.olap4j.mdx.AxisNode;
@@ -31,9 +30,7 @@ import org.olap4j.mdx.CubeNode;
 import org.olap4j.mdx.IdentifierNode;
 import org.olap4j.mdx.LevelNode;
 import org.olap4j.mdx.LiteralNode;
-import org.olap4j.mdx.MemberNode;
 import org.olap4j.mdx.ParseTreeNode;
-import org.olap4j.mdx.PropertyValueNode;
 import org.olap4j.mdx.SelectNode;
 import org.olap4j.mdx.Syntax;
 import org.olap4j.mdx.WithMemberNode;
@@ -42,18 +39,16 @@ import org.olap4j.mdx.parser.MdxParser;
 import org.olap4j.mdx.parser.impl.DefaultMdxParserImpl;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
-import org.olap4j.metadata.Property;
 import org.saiku.query.mdx.IFilterFunction;
-import org.saiku.query.metadata.Calculated;
 import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
 
 /**
  * Utility class to convert a Query object to a SelectNode.
  */
-public class Olap4jNodeConverter {
+public class Olap4jNodeConverter extends NodeConverter {
 
-	public static SelectNode toOlap4j(Query query) {
+	public static SelectNode toQuery(Query query) {
 		List<IdentifierNode> cellpropertyList = Collections.emptyList();
 		List<ParseTreeNode> withList = new ArrayList<ParseTreeNode>();
 		List<QueryAxis> axisList = new ArrayList<QueryAxis>();
@@ -64,13 +59,13 @@ public class Olap4jNodeConverter {
 		if (query.getAxes().containsKey(Axis.FILTER)) {
 			final QueryAxis axis = query.getAxes().get(Axis.FILTER);
 			if (!axis.hierarchies.isEmpty()) {
-				filterAxis = toOlap4j(withList, axis);
+				filterAxis = toAxis(withList, axis);
 			}
 		}
 		return new SelectNode(
 				null,
 				withList,
-				toOlap4j(withList, axisList),
+				toAxisList(withList, axisList),
 				new CubeNode(
 						null,
 						query.getCube()),
@@ -78,75 +73,17 @@ public class Olap4jNodeConverter {
 						cellpropertyList);
 	}
 
-	private static CallNode generateSetCall(ParseTreeNode... args) {
-		return
-				new CallNode(
-						null,
-						"{}",
-						Syntax.Braces,
-						args);
-	}
-
-	private static CallNode generateListSetCall(List<ParseTreeNode> cnodes) {
-		return
-				new CallNode(
-						null,
-						"{}",
-						Syntax.Braces,
-						cnodes);
-	}
-
-	private static CallNode generateListTupleCall(List<ParseTreeNode> cnodes) {
-		return
-				new CallNode(
-						null,
-						"()",
-						Syntax.Parentheses,
-						cnodes);
-	}
-
-	protected static CallNode generateCrossJoin(List<ParseTreeNode> selections)
-	{
-		ParseTreeNode sel1 = selections.remove(0);
-		if (sel1 instanceof MemberNode) {
-			sel1 = generateSetCall(sel1);
-		}
-		if (selections.size() == 1) {
-			ParseTreeNode sel2 = selections.get(0);
-			if (sel2 instanceof MemberNode) {
-				sel2 = generateSetCall(sel2);
+	private static List<AxisNode> toAxisList(List<ParseTreeNode> withList, List<QueryAxis> axes) {
+		final ArrayList<AxisNode> axisList = new ArrayList<AxisNode>();
+		for (QueryAxis axis : axes) {
+			AxisNode axisNode = toAxis(withList, axis);
+			if (axisNode != null) {
+				axisList.add(axisNode);
 			}
-			return new CallNode(
-					null, "CrossJoin", Syntax.Function, sel1, sel2);
-		} else {
-			return new CallNode(
-					null, "CrossJoin", Syntax.Function, sel1,
-					generateCrossJoin(selections));
 		}
+		return axisList;
 	}
 
-	protected static CallNode generateUnion(List<List<ParseTreeNode>> unions) {
-		if (unions.size() > 2) {
-			List<ParseTreeNode> first = unions.remove(0);
-			return new CallNode(
-					null, "Union", Syntax.Function,
-					generateCrossJoin(first),
-					generateUnion(unions));
-		} else {
-			return new CallNode(
-					null, "Union", Syntax.Function,
-					generateCrossJoin(unions.get(0)),
-					generateCrossJoin(unions.get(1)));
-		}
-	}
-
-	protected static CallNode generateHierarchizeUnion(
-			List<List<ParseTreeNode>> unions)
-	{
-		return new CallNode(
-				null, "Hierarchize", Syntax.Function,
-				generateUnion(unions));
-	}
 
 
 	/*
@@ -155,14 +92,14 @@ public class Olap4jNodeConverter {
 	 * crossjoin.
 	 * It might return null if there are no dimensions placed on the axis.
 	 */
-	private static AxisNode toOlap4j(List<ParseTreeNode> withList, QueryAxis axis) {
+	private static AxisNode toAxis(List<ParseTreeNode> withList, QueryAxis axis) {
 
 		ParseTreeNode axisExpression = null;
 		if (!axis.isMdxSetExpression()) {
 			List<ParseTreeNode> hierarchies = new ArrayList<ParseTreeNode>();
 
 			for(QueryHierarchy h : axis.getQueryHierarchies()) {
-				ParseTreeNode hierarchyNode = toOlap4jHierarchy(withList, h);
+				ParseTreeNode hierarchyNode = toHierarchy(withList, h);
 				hierarchies.add(hierarchyNode);
 			}
 			if (hierarchies.size() == 1) {
@@ -220,7 +157,7 @@ public class Olap4jNodeConverter {
 				axisNode);
 	}
 
-	private static ParseTreeNode toOlap4jHierarchy(List<ParseTreeNode> withList,
+	private static ParseTreeNode toHierarchy(List<ParseTreeNode> withList,
 			QueryHierarchy h) {
 		ParseTreeNode hierarchySet = null;
 
@@ -228,7 +165,7 @@ public class Olap4jNodeConverter {
 			List<ParseTreeNode> levels = new ArrayList<ParseTreeNode>();
 			ParseTreeNode existSet = null;
 			for (QueryLevel l : h.getActiveQueryLevels()) {
-				ParseTreeNode levelNode = toOlap4jLevelSet(l);
+				ParseTreeNode levelNode = toLevel(l);
 				levelNode = toOlap4jQuerySet(levelNode, l);
 				levels.add(levelNode);
 				if (!l.isSimple()) {
@@ -277,7 +214,7 @@ public class Olap4jNodeConverter {
 		return hierarchySet;
 	}
 
-	private static ParseTreeNode toOlap4jLevelSet(QueryLevel level) {
+	private static ParseTreeNode toLevel(QueryLevel level) {
 		List<Member> inclusions = new ArrayList<Member>();
 		List<Member> exclusions = new ArrayList<Member>();
 		inclusions.addAll(level.getInclusions());
@@ -295,56 +232,6 @@ public class Olap4jNodeConverter {
 		}
 		
 		return baseNode;
-	}
-
-	private static WithMemberNode toOlap4jCalculatedMember(Calculated cm) {
-		MdxParser parser = new DefaultMdxParserImpl();
-		ParseTreeNode formula = parser.parseExpression(cm.getFormula());
-		List<PropertyValueNode> propertyList = new ArrayList<PropertyValueNode>();
-		for (Entry<Property, Object> entry : cm.getPropertyValueMap().entrySet()) {
-			ParseTreeNode exp = parser.parseExpression(entry.getValue().toString());
-			String name = entry.getKey().getName();
-			PropertyValueNode prop = new PropertyValueNode(null, name, exp);
-			propertyList.add(prop);
-		}
-		WithMemberNode wm = new WithMemberNode(
-				null, 
-				IdentifierNode.parseIdentifier(cm.getUniqueName()), 
-				formula, 
-				propertyList);
-		return wm;
-	}
-
-	private static ParseTreeNode toOlap4jMemberSet(List<Member> members) {
-		List<ParseTreeNode> membernodes = new ArrayList<ParseTreeNode>();
-		for (Member m : members) {
-			membernodes.add(new MemberNode(null, m));
-		}
-		return generateListSetCall(membernodes);
-	}
-
-	private static ParseTreeNode toOlap4jMeasureSet(List<Measure> measures) {
-		List<ParseTreeNode> membernodes = new ArrayList<ParseTreeNode>();
-		for (Measure m : measures) {
-			membernodes.add(new MemberNode(null, m));
-		}
-		return generateListSetCall(membernodes);
-	}
-
-	
-	private static List<AxisNode> toOlap4j(List<ParseTreeNode> withList, List<QueryAxis> axes) {
-		final ArrayList<AxisNode> axisList = new ArrayList<AxisNode>();
-		for (QueryAxis axis : axes) {
-			AxisNode axisNode = toOlap4j(withList, axis);
-			if (axisNode != null) {
-				axisList.add(axisNode);
-			}
-		}
-		return axisList;
-	}
-
-	private static IdentifierNode getIdentifier(QueryAxis axis) {
-		return IdentifierNode.ofNames("Axis" + axis.getLocation().name());
 	}
 
 	private static ParseTreeNode toOlap4jQuerySet(ParseTreeNode expression, IQuerySet o) {

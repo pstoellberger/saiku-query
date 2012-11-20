@@ -88,7 +88,7 @@ public class Query {
      * @return A SelectNode object representing the current query structure.
      */
     public SelectNode getSelect() {
-        return Olap4jNodeConverter.toOlap4j(this);
+        return Olap4jNodeConverter.toQuery(this);
     }
 
     /**
