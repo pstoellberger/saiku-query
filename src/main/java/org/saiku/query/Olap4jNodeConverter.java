@@ -40,7 +40,6 @@ import org.olap4j.mdx.WithMemberNode;
 import org.olap4j.mdx.WithSetNode;
 import org.olap4j.mdx.parser.MdxParser;
 import org.olap4j.mdx.parser.impl.DefaultMdxParserImpl;
-import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.Property;
@@ -52,7 +51,7 @@ import org.saiku.query.metadata.CalculatedMember;
 /**
  * Utility class to convert a Query object to a SelectNode.
  */
-abstract class Olap4jNodeConverter {
+public class Olap4jNodeConverter {
 
 	public static SelectNode toOlap4j(Query query) {
 		List<IdentifierNode> cellpropertyList = Collections.emptyList();
@@ -176,7 +175,7 @@ abstract class Olap4jNodeConverter {
 			}
 
 		}
-		axisExpression = toOlap4j(axisExpression, axis);
+		axisExpression = toOlap4jSortedQuerySet(axisExpression, axis);
 		ParseTreeNode axisNode = null;
 		if (axisExpression != null) {
 			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
@@ -224,40 +223,40 @@ abstract class Olap4jNodeConverter {
 	private static ParseTreeNode toOlap4jHierarchy(List<ParseTreeNode> withList,
 			QueryHierarchy h) {
 		ParseTreeNode hierarchySet = null;
-		MdxParser parser = new DefaultMdxParserImpl();
 
 		if (!h.isMdxSetExpression()) {
-			List<Member> inclusions = new ArrayList<Member>();
-			List<Member> exclusions = new ArrayList<Member>();
 			List<ParseTreeNode> levels = new ArrayList<ParseTreeNode>();
+			ParseTreeNode existSet = null;
 			for (QueryLevel l : h.getActiveQueryLevels()) {
-				inclusions.addAll(l.getInclusions());
-				exclusions.addAll(l.getExclusions());
-				ParseTreeNode levelNode = toOlap4jLevelSet(l.getLevel());
-				levelNode = toOlap4j(levelNode, l);
+				ParseTreeNode levelNode = toOlap4jLevelSet(l);
+				levelNode = toOlap4jQuerySet(levelNode, l);
 				levels.add(levelNode);
+				if (!l.isSimple()) {
+					existSet = levelNode;
+				}
+			}
+			ParseTreeNode levelSet = null;
+			if (levels.size() > 1) {
+				levelSet = generateListSetCall(levels);
+			} else if (levels.size() == 1) {
+				levelSet = levels.get(0);
 			}
 			
-			ParseTreeNode levelSet = null;
-			if (levels.size() > 0) {
-				levelSet = generateListSetCall(levels);
-				if (inclusions.size() > 0) {
-					ParseTreeNode memberSet = toOlap4jMemberSet(inclusions);
-					if (levels.size() > 1) {
-						h.setHierarchizeMode(h.getQuery().getDefaultHierarchizeMode());
-						levelSet = new CallNode(null, "Exists", Syntax.Function, levelSet, memberSet);						
-					} else {
-						levelSet = memberSet;
-					}
-				}
-				if (exclusions.size() > 0) {
-					ParseTreeNode exceptSet = toOlap4jMemberSet(exclusions);
-					levelSet =  new CallNode(null, "Except", Syntax.Function, levelSet, exceptSet);			
-				}
+			if (h.isConsistent() && levels.size() > 1 && existSet != null) {
+				levelSet = new CallNode(null, "Exists", Syntax.Function, levelSet, existSet);
 			}
+			
+			if (h.needsHierarchize()) {
+				levelSet = new CallNode(
+						null,
+						"Hierarchize",
+						Syntax.Function,
+						levelSet);
+
+			}
+				
 			List<ParseTreeNode> cmNodes = new ArrayList<ParseTreeNode>();
 			for (CalculatedMember cm : h.getActiveCalculatedMembers()) {
-				
 				WithMemberNode wm = toOlap4jCalculatedMember(cm);
 				withList.add(wm);
 				cmNodes.add(wm.getIdentifier());
@@ -273,13 +272,29 @@ abstract class Olap4jNodeConverter {
 				hierarchySet = levelSet;	
 			}
 		}
-		hierarchySet = toOlap4j(hierarchySet, h);
+		hierarchySet = toOlap4jSortedQuerySet(hierarchySet, h);
 
 		return hierarchySet;
 	}
 
-	private static ParseTreeNode toOlap4jLevelSet(Level level) {
-		return new CallNode(null, "Members", Syntax.Property, new LevelNode(null, level));
+	private static ParseTreeNode toOlap4jLevelSet(QueryLevel level) {
+		List<Member> inclusions = new ArrayList<Member>();
+		List<Member> exclusions = new ArrayList<Member>();
+		inclusions.addAll(level.getInclusions());
+		exclusions.addAll(level.getExclusions());
+		
+		ParseTreeNode baseNode = new CallNode(null, "Members", Syntax.Property, new LevelNode(null, level.getLevel()));
+		baseNode = generateSetCall(baseNode);
+		
+		if (inclusions.size() > 0) {
+			baseNode = toOlap4jMemberSet(inclusions);
+		}
+		if (exclusions.size() > 0) {
+			ParseTreeNode exceptSet = toOlap4jMemberSet(exclusions);
+			baseNode =  new CallNode(null, "Except", Syntax.Function, baseNode, exceptSet);			
+		}
+		
+		return baseNode;
 	}
 
 	private static WithMemberNode toOlap4jCalculatedMember(Calculated cm) {
@@ -332,7 +347,7 @@ abstract class Olap4jNodeConverter {
 		return IdentifierNode.ofNames("Axis" + axis.getLocation().name());
 	}
 
-	private static ParseTreeNode toOlap4j(ParseTreeNode expression, AbstractQueryObject o) {
+	private static ParseTreeNode toOlap4jQuerySet(ParseTreeNode expression, IQuerySet o) {
 		MdxParser parser = new DefaultMdxParserImpl();
 
 		if (o.isMdxSetExpression()) {
@@ -344,6 +359,12 @@ abstract class Olap4jNodeConverter {
 				expression = filter.visit(parser, expression);
 			}
 		}
+		
+		return expression;
+		
+	}
+	private static ParseTreeNode toOlap4jSortedQuerySet(ParseTreeNode expression, ISortableQuerySet o) {
+		expression = toOlap4jQuerySet(expression, o);
 		if (o.getSortOrder() != null) {
 			LiteralNode evaluatorNode =
 					LiteralNode.createSymbol(
@@ -360,7 +381,7 @@ abstract class Olap4jNodeConverter {
 									null, o.getSortOrder().name()));
 		} else if (o.getHierarchizeMode() != null) {
 			if (o.getHierarchizeMode().equals(
-					IQuerySet.HierarchizeMode.PRE))
+					ISortableQuerySet.HierarchizeMode.PRE))
 			{
 				// In pre mode, we don't add the "POST" literal.
 				expression = new CallNode(
@@ -369,7 +390,7 @@ abstract class Olap4jNodeConverter {
 						Syntax.Function,
 						expression);
 			} else if (o.getHierarchizeMode().equals(
-					IQuerySet.HierarchizeMode.POST))
+					ISortableQuerySet.HierarchizeMode.POST))
 			{
 				expression = new CallNode(
 						null,

@@ -6,7 +6,7 @@ import org.olap4j.Axis;
 import org.olap4j.impl.NamedListImpl;
 import org.olap4j.metadata.NamedList;
 
-public class QueryAxis extends AbstractQueryObject {
+public class QueryAxis extends AbstractSortableQuerySet {
 
     protected final NamedList<QueryHierarchy> hierarchies = new NamedListImpl<QueryHierarchy>();
     
@@ -112,6 +112,7 @@ public class QueryAxis extends AbstractQueryObject {
     	hierarchy.setAxis(null);
         this.getQueryHierarchies().remove(hierarchy);
     }
+
 }
 
 

@@ -13,7 +13,7 @@ import org.olap4j.metadata.Member;
 import org.olap4j.metadata.NamedList;
 import org.saiku.query.metadata.CalculatedMember;
 
-public class QueryHierarchy extends AbstractQueryObject implements Named {
+public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
 
 	protected QueryAxis axis;
     private final Query query;
@@ -26,8 +26,13 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
 	private NamedList<CalculatedMember> calculatedMembers = new NamedListImpl<CalculatedMember>();
 
 	private NamedList<CalculatedMember> activeCalculatedMembers = new NamedListImpl<CalculatedMember>();
+	
+	private boolean consistent = true;
+	
+	private boolean visualTotals = false;
+	private String visualTotalsPattern;
 
-    public QueryHierarchy(Query query, Hierarchy hierarchy) {
+	public QueryHierarchy(Query query, Hierarchy hierarchy) {
         super();
         this.query = query;
         this.hierarchy = hierarchy;
@@ -56,6 +61,46 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
     public String getName() {
         return hierarchy.getName();
     }
+    
+    public boolean isConsistent() {
+    	return consistent;
+    }
+    
+    public void setConsistent(boolean consistent) {
+    	this.consistent = consistent;
+    }
+    
+    /**
+     * Should the hierarchy return visual totals
+	 * @return is visualTotals
+	 */
+	public boolean isVisualTotals() {
+		return visualTotals;
+	}
+
+	/**
+	 * @param visualTotals should the hierarchy use visual totals
+	 */
+	public void setVisualTotals(boolean visualTotals) {
+		this.visualTotals = visualTotals;
+		if(!visualTotals) {
+			this.visualTotalsPattern = null;
+		}
+	}
+	
+	public void setVisualTotalsPattern(String pattern) {
+		this.visualTotalsPattern = pattern;
+		this.visualTotals = true;
+	}
+	
+	public String getVisualTotalsPattern() {
+		return visualTotalsPattern;
+	}
+	
+	public boolean needsHierarchize() {
+		return ((visualTotals || activeLevels.size() > 1) 
+				&& getHierarchizeMode() == null);
+	}
 
     /**
      * Returns the underlying Hierarchy object onto which
@@ -67,33 +112,6 @@ public class QueryHierarchy extends AbstractQueryObject implements Named {
     public Hierarchy getHierarchy() {
         return hierarchy;
     }
-    
-//    /**
-//     * Returns the Olap4j's QueryLevel object according to the name
-//     * given as a parameter. If no Level of the given name is found,
-//     * a null value will be returned.
-//     * @param name The name of the Level you want the object for.
-//     * @return The QueryLevel object, null if no Level of that
-//     * name can be found.
-//     */
-//    public QueryLevel getLevel(String name) {
-//        return queryLevels.get(name);
-//    }
-//
-//    /**
-//     * Returns the Olap4j's QueryLevel object according to the Level
-//     * given as a parameter. If no QueryLevel is found,
-//     * a null value will be returned.
-//     * @param hierarchy The Level of the QueryLevel you want the object for.
-//     * @return The QueryLevel object, null if no hierarchy of that
-//     * name can be found.
-//     */
-//    public QueryLevel getLevel(Level level) {
-//    	if (level == null) {
-//    		return null;
-//    	}
-//    	return queryLevels.get(level.getName());
-//    }
     
     public void addCalculatedMember(CalculatedMember cm) {
     	calculatedMembers.add(cm);

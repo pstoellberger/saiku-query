@@ -22,7 +22,7 @@ import org.olap4j.metadata.Member;
 import org.olap4j.metadata.Member.Type;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Property;
-import org.saiku.query.IQuerySet.HierarchizeMode;
+import org.saiku.query.ISortableQuerySet.HierarchizeMode;
 import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
 

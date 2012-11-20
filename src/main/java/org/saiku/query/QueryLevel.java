@@ -7,7 +7,7 @@ import org.olap4j.impl.Named;
 import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Member;
 
-public class QueryLevel extends AbstractQueryObject implements Named {
+public class QueryLevel extends AbstractQuerySet implements Named {
     private final QueryHierarchy hierarchy;
 	private final Level level;
 	
@@ -26,6 +26,11 @@ public class QueryLevel extends AbstractQueryObject implements Named {
 
     public String getName() {
         return level.getName();
+    }
+    
+    @Override
+    public boolean isSimple() {
+    	return (super.isSimple() && inclusions.isEmpty() && exclusions.isEmpty());
     }
 
     /**

@@ -1,13 +1,10 @@
 package org.saiku.query;
 
-import java.sql.ResultSet;
-import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.TestCase;
 
 import org.olap4j.Axis;
-import org.olap4j.Cell;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
@@ -22,7 +19,7 @@ import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Schema;
-import org.saiku.query.IQuerySet.HierarchizeMode;
+import org.saiku.query.ISortableQuerySet.HierarchizeMode;
 import org.saiku.query.QueryDetails.Location;
 import org.saiku.query.mdx.GenericFilter;
 import org.saiku.query.mdx.IFilterFunction.MdxFunctionType;
@@ -50,7 +47,6 @@ public class QueryTest extends TestCase {
 	}
 
 	public void testBasicQuery() {
-
 		try {
 			Cube cube = getFoodmartCube("Sales");
 			Query query = new Query("my query", cube);
@@ -115,7 +111,7 @@ public class QueryTest extends TestCase {
 			String expectedQuery = 
 					"WITH\n"
 							+ "SET [AxisCOLUMNS] AS\n"
-							+ "    Hierarchize(Except(Exists({[Product].[Product Family].Members, [Product].[Product Department].Members}, {[Product].[Drink].[Beverages], [Product].[Non-Consumable].[Checkout]}), {[Product].[Food]}))\n"
+						    + "    Hierarchize(Exists({Except({[Product].[Product Family].Members}, {[Product].[Food]}), {[Product].[Drink].[Beverages], [Product].[Non-Consumable].[Checkout]}}, {[Product].[Drink].[Beverages], [Product].[Non-Consumable].[Checkout]}))\n"
 							+ "SELECT\n"
 							+ "[AxisCOLUMNS] ON COLUMNS\n"
 							+ "FROM [Sales]";
