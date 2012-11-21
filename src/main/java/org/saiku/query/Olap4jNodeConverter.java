@@ -112,7 +112,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 			}
 
 		}
-		axisExpression = toOlap4jSortedQuerySet(axisExpression, axis);
+		axisExpression = toSortedQuerySet(axisExpression, axis);
 		ParseTreeNode axisNode = null;
 		if (axisExpression != null) {
 			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
@@ -166,7 +166,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 			ParseTreeNode existSet = null;
 			for (QueryLevel l : h.getActiveQueryLevels()) {
 				ParseTreeNode levelNode = toLevel(l);
-				levelNode = toOlap4jQuerySet(levelNode, l);
+				levelNode = toQuerySet(levelNode, l);
 				levels.add(levelNode);
 				if (!l.isSimple()) {
 					existSet = levelNode;
@@ -209,7 +209,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 				hierarchySet = levelSet;	
 			}
 		}
-		hierarchySet = toOlap4jSortedQuerySet(hierarchySet, h);
+		hierarchySet = toSortedQuerySet(hierarchySet, h);
 
 		return hierarchySet;
 	}
@@ -234,7 +234,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 		return baseNode;
 	}
 
-	private static ParseTreeNode toOlap4jQuerySet(ParseTreeNode expression, IQuerySet o) {
+	private static ParseTreeNode toQuerySet(ParseTreeNode expression, IQuerySet o) {
 		MdxParser parser = new DefaultMdxParserImpl();
 
 		if (o.isMdxSetExpression()) {
@@ -250,8 +250,8 @@ public class Olap4jNodeConverter extends NodeConverter {
 		return expression;
 		
 	}
-	private static ParseTreeNode toOlap4jSortedQuerySet(ParseTreeNode expression, ISortableQuerySet o) {
-		expression = toOlap4jQuerySet(expression, o);
+	private static ParseTreeNode toSortedQuerySet(ParseTreeNode expression, ISortableQuerySet o) {
+		expression = toQuerySet(expression, o);
 		if (o.getSortOrder() != null) {
 			LiteralNode evaluatorNode =
 					LiteralNode.createSymbol(
