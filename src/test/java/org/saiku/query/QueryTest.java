@@ -1,16 +1,12 @@
 package org.saiku.query;
 
-import java.util.List;
-
 import junit.framework.TestCase;
 
 import org.olap4j.Axis;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
-import org.olap4j.OlapStatement;
 import org.olap4j.OlapWrapper;
-import org.olap4j.Position;
 import org.olap4j.impl.IdentifierParser;
 import org.olap4j.mdx.SelectNode;
 import org.olap4j.metadata.Catalog;
@@ -570,6 +566,105 @@ public class QueryTest extends TestCase {
 
 			
 
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
+	public void testVisualTotals() {
+
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query2", cube);
+			QueryAxis rows = query.getAxis(Axis.ROWS);
+			rows.setNonEmpty(true);
+			QueryAxis columns = query.getAxis(Axis.COLUMNS);
+			
+			QueryHierarchy time = query.getHierarchy("Time");
+			QueryLevel quarter = time.includeLevel("Quarter");
+			QueryLevel month = time.includeLevel("Month");
+			
+			month.addFilter(new NameLikeFilter(time.getHierarchy(), "2"));
+			quarter.addFilter(new NameLikeFilter(time.getHierarchy(), "Q"));
+			
+			time.setVisualTotals(true);
+			rows.addHierarchy(time);
+			
+			QueryHierarchy products = query.getHierarchy("Product");
+			products.include("[Product].[Drink]");
+			columns.addHierarchy(products);
+			
+			SelectNode mdx = query.getSelect();
+			String mdxString = mdx.toString();
+			String expectedQuery = 
+					"WITH\n"
+			                + "SET [AxisCOLUMNS] AS\n"
+			                + "    {[Product].[Drink]}\n"
+			                + "SET [AxisROWS] AS\n"
+			                + "    VisualTotals(Hierarchize(Exists({Filter({[Time].[Quarter].Members}, (Instr([Time].CurrentMember.Name, \"Q\")  >  0)), Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0))}, Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0)))))\n"
+			                + "SELECT\n"
+			                + "[AxisCOLUMNS] ON COLUMNS,\n"
+			                + "NON EMPTY [AxisROWS] ON ROWS\n"
+			                + "FROM [Sales]";
+	                        
+			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+
+			CellSet results = query.execute();
+			String s = TestContext.toString(results);
+			TestContext.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Product].[Drink]}\n"
+			                + "Axis #2:\n"
+			                + "{[Time].[1997].[Q1]}\n"
+			                + "{[Time].[1997].[Q1].[2]}\n"
+			                + "{[Time].[1997].[Q4]}\n"
+			                + "{[Time].[1997].[Q4].[12]}\n"
+			                + "Row #0: 1,951\n"
+			                + "Row #1: 1,951\n"
+			                + "Row #2: 2,419\n"
+			                + "Row #3: 2,419\n",
+							s);
+
+			
+
+			time.setVisualTotalsPattern("Total - *");
+			mdx = query.getSelect();
+			mdxString = mdx.toString();
+			expectedQuery = 
+					"WITH\n"
+			                + "SET [AxisCOLUMNS] AS\n"
+			                + "    {[Product].[Drink]}\n"
+			                + "SET [AxisROWS] AS\n"
+			                + "    VisualTotals(Hierarchize(Exists({Filter({[Time].[Quarter].Members}, (Instr([Time].CurrentMember.Name, \"Q\")  >  0)), Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0))}, Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0)))), \"Total - *\")\n"
+			                + "SELECT\n"
+			                + "[AxisCOLUMNS] ON COLUMNS,\n"
+			                + "NON EMPTY [AxisROWS] ON ROWS\n"
+			                + "FROM [Sales]";
+	                        
+			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+
+			results = query.execute();
+			s = TestContext.toString(results);
+			TestContext.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Product].[Drink]}\n"
+			                + "Axis #2:\n"
+			                + "{[Time].[1997].[Total - Q1]}\n"
+			                + "{[Time].[1997].[Q1].[2]}\n"
+			                + "{[Time].[1997].[Total - Q4]}\n"
+			                + "{[Time].[1997].[Q4].[12]}\n"
+			                + "Row #0: 1,951\n"
+			                + "Row #1: 1,951\n"
+			                + "Row #2: 2,419\n"
+			                + "Row #3: 2,419\n",
+							s);
+
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail();

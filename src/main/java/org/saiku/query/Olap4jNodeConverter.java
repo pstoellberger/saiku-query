@@ -211,6 +211,23 @@ public class Olap4jNodeConverter extends NodeConverter {
 		}
 		hierarchySet = toSortedQuerySet(hierarchySet, h);
 
+		if (h.isVisualTotals()) {
+			if (h.getVisualTotalsPattern() !=  null) {
+				hierarchySet = new CallNode(
+						null,
+						"VisualTotals",
+						Syntax.Function,
+						hierarchySet,
+						LiteralNode.createString(null,  h.getVisualTotalsPattern()));
+			} else {
+				hierarchySet = new CallNode(
+						null,
+						"VisualTotals",
+						Syntax.Function,
+						hierarchySet);
+			}
+			
+		}
 		return hierarchySet;
 	}
 
