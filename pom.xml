@@ -28,13 +28,13 @@
 				</configuration>
 			</plugin>
 			<plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.12.4</version>
-          <configuration>
-				<argLine> -Xmx512m</argLine>
-		</configuration>
-        </plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.12.4</version>
+				<configuration>
+					<argLine> -Xmx512m</argLine>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -56,10 +56,10 @@
 								</artifactItem>
 							</artifactItems>
 						</configuration>
-						</execution>
-					</executions>
-				</plugin>
-										<plugin>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
 				<version>1.2</version>
@@ -72,19 +72,19 @@
 						</goals>
 						<configuration>
 							<tasks>
-							<echo message="Prepare Test. Unzipping foodmart" />
+								<echo message="Prepare Test. Unzipping foodmart" />
 								<unzip dest="target/test-classes/">
 									<fileset dir="target/">
 										<include name="mondrian-data*.jar" />
 									</fileset>
 								</unzip>
-           					<echo message="Unzipped!" />	
+								<echo message="Unzipped!" />
 							</tasks>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-			
+
 		</plugins>
 	</build>
 	<repositories>
@@ -97,6 +97,12 @@
 			<name>pentaho repository</name>
 			<url>http://repository.pentaho.org/artifactory/pentaho</url>
 		</repository>
+		<repository>
+			<id>Analytical Labs Repo</id>
+			<name>Analytical Labs Repo-releases</name>
+			<url>http://repo.analytical-labs.com/alabs-release-local</url>
+		</repository>
+
 	</repositories>
 	<dependencies>
 		<dependency>
@@ -146,13 +152,13 @@
 			<scope>test</scope>
 		</dependency>
 
-	<dependency>
-		<groupId>pentaho</groupId>
-		<artifactId>mondrian-data-foodmart</artifactId>
-		<version>0.9-SNAPSHOT</version>
-		<scope>test</scope>
-	</dependency>
-	<dependency>
+		<dependency>
+			<groupId>pentaho</groupId>
+			<artifactId>mondrian-data-foodmart</artifactId>
+			<version>0.9-SNAPSHOT</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>3.8.1</version>
