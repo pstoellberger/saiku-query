@@ -130,15 +130,21 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     	return activeLevels;
     }
     
+
+    public QueryLevel getActiveLevel(String levelName) {
+    	return activeLevels.get(levelName);
+
+    }
     
-    public void includeLevel(String levelName) {
+    public QueryLevel includeLevel(String levelName) {
     	QueryLevel ql = queryLevels.get(levelName);
     	if (!activeLevels.contains(ql)) {
     		activeLevels.add(ql);
     	}
+    	return ql;
     }
 
-    public void includeLevel(Level l) throws OlapException {
+    public QueryLevel includeLevel(Level l) throws OlapException {
     	if (!l.getHierarchy().equals(hierarchy)) {
     		throw new OlapException(
     				"You cannot include level " + l.getUniqueName() 
@@ -148,6 +154,7 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     	if (!activeLevels.contains(l)) {
     		activeLevels.add(ql);
     	}
+    	return ql;
     }
     
     public void includeMembers(List<Member> members) throws OlapException {

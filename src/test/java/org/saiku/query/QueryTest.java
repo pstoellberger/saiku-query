@@ -25,6 +25,7 @@ import org.saiku.query.mdx.GenericFilter;
 import org.saiku.query.mdx.IFilterFunction.MdxFunctionType;
 import org.saiku.query.mdx.NFilter;
 import org.saiku.query.mdx.NameFilter;
+import org.saiku.query.mdx.NameLikeFilter;
 import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
 
@@ -459,6 +460,115 @@ public class QueryTest extends TestCase {
 			if (TestContext.DEBUG) {
 				System.out.println(TestContext.toJavaString(mdxString));
 			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
+	public void testNameLikeFilter() {
+
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query2", cube);
+			QueryAxis rows = query.getAxis(Axis.ROWS);
+			rows.setNonEmpty(true);
+			QueryAxis columns = query.getAxis(Axis.COLUMNS);
+			QueryHierarchy time = query.getHierarchy("Time");
+			time.includeLevel("Quarter");
+			time.includeLevel("Month");
+			time.addFilter(new NameLikeFilter(time.getHierarchy(), "Q", "2"));
+			
+			rows.addHierarchy(time);
+			
+			QueryHierarchy products = query.getHierarchy("Product");
+			products.include("[Product].[Drink]");
+			columns.addHierarchy(products);
+			
+			SelectNode mdx = query.getSelect();
+			String mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestContext.toJavaString(mdxString));
+			}
+			String expectedQuery = 
+					"WITH\n"
+			                + "SET [AxisCOLUMNS] AS\n"
+			                + "    {[Product].[Drink]}\n"
+			                + "SET [AxisROWS] AS\n"
+			                + "    Filter(Hierarchize({{[Time].[Quarter].Members}, {[Time].[Month].Members}}), ((Instr([Time].CurrentMember.Name, \"Q\")  >  0)  OR  (Instr([Time].CurrentMember.Name, \"2\")  >  0)))\n"
+			                + "SELECT\n"
+			                + "[AxisCOLUMNS] ON COLUMNS,\n"
+			                + "NON EMPTY [AxisROWS] ON ROWS\n"
+			                + "FROM [Sales]";
+	                        
+			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+
+			CellSet results = query.execute();
+			String s = TestContext.toString(results);
+			TestContext.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Product].[Drink]}\n"
+			                + "Axis #2:\n"
+			                + "{[Time].[1997].[Q1]}\n"
+			                + "{[Time].[1997].[Q1].[2]}\n"
+			                + "{[Time].[1997].[Q2]}\n"
+			                + "{[Time].[1997].[Q3]}\n"
+			                + "{[Time].[1997].[Q4]}\n"
+			                + "{[Time].[1997].[Q4].[12]}\n"
+			                + "Row #0: 5,976\n"
+			                + "Row #1: 1,951\n"
+			                + "Row #2: 5,895\n"
+			                + "Row #3: 6,065\n"
+			                + "Row #4: 6,661\n"
+			                + "Row #5: 2,419\n",
+							s);
+
+			time.clearFilters();
+			QueryLevel month = time.getActiveLevel("Month");
+			month.addFilter(new NameLikeFilter(time.getHierarchy(), "2"));
+			QueryLevel quarter = time.getActiveLevel("Quarter");
+			quarter.addFilter(new NameLikeFilter(time.getHierarchy(), "Q"));
+			
+			mdx = query.getSelect();
+			mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestContext.toJavaString(mdxString));
+			}
+			expectedQuery = 
+					"WITH\n"
+			                + "SET [AxisCOLUMNS] AS\n"
+			                + "    {[Product].[Drink]}\n"
+			                + "SET [AxisROWS] AS\n"
+			                + "    Hierarchize(Exists({Filter({[Time].[Quarter].Members}, (Instr([Time].CurrentMember.Name, \"Q\")  >  0)), Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0))}, Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0))))\n"
+			                + "SELECT\n"
+			                + "[AxisCOLUMNS] ON COLUMNS,\n"
+			                + "NON EMPTY [AxisROWS] ON ROWS\n"
+			                + "FROM [Sales]";
+	                        
+			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+
+			results = query.execute();
+			s = TestContext.toString(results);
+			TestContext.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Product].[Drink]}\n"
+			                + "Axis #2:\n"
+			                + "{[Time].[1997].[Q1]}\n"
+			                + "{[Time].[1997].[Q1].[2]}\n"
+			                + "{[Time].[1997].[Q4]}\n"
+			                + "{[Time].[1997].[Q4].[12]}\n"
+			                + "Row #0: 5,976\n"
+			                + "Row #1: 1,951\n"
+			                + "Row #2: 6,661\n"
+			                + "Row #3: 2,419\n",
+							s);
+
+			
 
 		} catch (Exception e) {
 			e.printStackTrace();
