@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
+import org.olap4j.OlapException;
 import org.olap4j.OlapStatement;
 import org.olap4j.OlapWrapper;
 import org.olap4j.Position;
@@ -15,6 +16,18 @@ public class OlapTest extends TestCase {
 
 	private TestContext context = TestContext.instance();
 
+
+	public void testConnection() {
+		OlapConnection con = context.createConnection();
+		try {
+			assertEquals(1, con.getOlapCatalogs().size());
+			assertEquals("FoodMart", con.getOlapCatalogs().get(0).getName());
+		} catch (OlapException e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
 	public void testVisualTotalsCaptionBug() {
 
 		try {

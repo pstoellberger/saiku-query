@@ -28,6 +28,15 @@ public class QueryLevel extends AbstractQuerySet implements Named {
         return level.getName();
     }
     
+    public String getUniqueName() {
+    	return level.getUniqueName();
+    }
+    
+    public String getCaption() {
+    	return level.getCaption();
+    }
+
+    
     @Override
     public boolean isSimple() {
     	return (super.isSimple() && inclusions.isEmpty() && exclusions.isEmpty());

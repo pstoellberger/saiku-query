@@ -48,6 +48,8 @@ public class Query {
     protected boolean selectDefaultMembers = true;
     private final OlapConnection connection;
 	private HierarchizeMode defaultHierarchizeMode = HierarchizeMode.PRE;
+	private boolean visualTotals = false;
+	private String visualTotalsPattern;
 	
     /**
      * Constructs a Query object.
@@ -304,7 +306,6 @@ public class Query {
     		Map<Property, Object> properties) 
     {
     	CalculatedMeasure cm = new CalculatedMeasure(
-    			measureHierarchy.getDimension(), 
     			measureHierarchy, 
     			name, 
     			name,
@@ -427,6 +428,26 @@ public class Query {
     public HierarchizeMode getDefaultHierarchizeMode() {
     	return this.defaultHierarchizeMode;
     }
+    
+    public void setDefaultVisualTotals(boolean visualTotals) {
+    	if (!visualTotals) {
+			this.visualTotalsPattern = null;
+		}
+    	this.visualTotals = visualTotals;
+    }
+    
+    public boolean getDefaultVisualTotals() {
+    	return this.visualTotals;
+    }
+    	
+	public void setDefaultVisualTotalsPattern(String pattern) {
+		this.visualTotalsPattern = pattern;
+		this.visualTotals = true;
+	}
+	
+	public String getDefaultVisualTotalsPattern() {
+		return visualTotalsPattern;
+	}
     
 //  /**
 //  * Validates the current query structure. If a hierarchy axis has

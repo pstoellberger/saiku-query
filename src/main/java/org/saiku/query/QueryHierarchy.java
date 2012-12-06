@@ -62,6 +62,14 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
         return hierarchy.getName();
     }
     
+    public String getUniqueName() {
+    	return hierarchy.getUniqueName();
+    }
+    
+    public String getCaption() {
+    	return hierarchy.getCaption();
+    }
+    
     public boolean isConsistent() {
     	return consistent;
     }
@@ -75,7 +83,7 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
 	 * @return is visualTotals
 	 */
 	public boolean isVisualTotals() {
-		return visualTotals;
+		return (visualTotals | query.getDefaultVisualTotals());
 	}
 
 	/**
@@ -94,11 +102,11 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
 	}
 	
 	public String getVisualTotalsPattern() {
-		return visualTotalsPattern;
+		return (visualTotalsPattern == null ? query.getDefaultVisualTotalsPattern() : visualTotalsPattern);
 	}
 	
 	public boolean needsHierarchize() {
-		return ((visualTotals || activeLevels.size() > 1) 
+		return ((visualTotals | activeLevels.size() > 1) 
 				&& getHierarchizeMode() == null);
 	}
 

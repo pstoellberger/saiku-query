@@ -34,14 +34,13 @@ public class CalculatedMeasure implements Measure, Named, Calculated {
 
 
 	public CalculatedMeasure(
-			Dimension dimension,
 			Hierarchy hierarchy,
 			String name,
 			String description,
 			String formula,
 			Map<Property, String> properties)
 	{
-		this.dimension = dimension;
+		this.dimension = hierarchy.getDimension();
 		this.hierarchy = hierarchy;
 		this.level = hierarchy.getLevels().get(0);
 		this.name = name;
