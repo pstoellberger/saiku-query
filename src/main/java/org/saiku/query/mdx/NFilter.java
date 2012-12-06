@@ -23,6 +23,10 @@ public class NFilter extends AbstractFilterFunction {
 		this.type = type;
 	}
 	
+	public int getN() {
+		return n;
+	}
+
 	public String getFilterExpression() {
 		return filterExpression;
 	}

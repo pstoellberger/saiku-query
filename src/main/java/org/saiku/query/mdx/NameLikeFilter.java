@@ -92,4 +92,11 @@ public class NameLikeFilter extends AbstractFilterFunction {
 	public MdxFunctionType getFunctionType() {
 		return type;
 	}
+	
+	/**
+	 * @return the filterExpression
+	 */
+	public List<String> getFilterExpression() {
+		return filterExpression;
+	}
 }

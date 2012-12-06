@@ -83,4 +83,11 @@ public class NameFilter extends AbstractFilterFunction {
 	public MdxFunctionType getFunctionType() {
 		return type;
 	}
+
+	/**
+	 * @return the filterExpression
+	 */
+	public List<String> getFilterExpression() {
+		return filterExpression;
+	}
 }
