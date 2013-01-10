@@ -15,7 +15,6 @@ import org.olap4j.mdx.parser.MdxParser;
 import org.olap4j.mdx.parser.impl.DefaultMdxParserImpl;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
-import org.olap4j.metadata.Property;
 import org.saiku.query.metadata.Calculated;
 
 public class NodeConverter {
@@ -112,9 +111,9 @@ public class NodeConverter {
 		MdxParser parser = new DefaultMdxParserImpl();
 		ParseTreeNode formula = parser.parseExpression(cm.getFormula());
 		List<PropertyValueNode> propertyList = new ArrayList<PropertyValueNode>();
-		for (Entry<Property, Object> entry : cm.getPropertyValueMap().entrySet()) {
-			ParseTreeNode exp = parser.parseExpression(entry.getValue().toString());
-			String name = entry.getKey().getName();
+		for (Entry<String, String> entry : cm.getFormatProperties().entrySet()) {
+			ParseTreeNode exp = parser.parseExpression(entry.getValue());
+			String name = entry.getKey();
 			PropertyValueNode prop = new PropertyValueNode(null, name, exp);
 			propertyList.add(prop);
 		}

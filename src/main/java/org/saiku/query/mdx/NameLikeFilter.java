@@ -99,4 +99,11 @@ public class NameLikeFilter extends AbstractFilterFunction {
 	public List<String> getFilterExpression() {
 		return filterExpression;
 	}
+	
+	/**
+	 * @return the hierarchy
+	 */
+	public Hierarchy getHierarchy() {
+		return hierarchy;
+	}
 }

@@ -28,7 +28,7 @@ public class CalculatedMember implements Member, Named, Calculated {
 	private Type memberType;
 	private String formula;
 	
-	private Map<Property, Object> properties = new HashMap<Property, Object>();
+	private Map<String, String> properties = new HashMap<String, String>();
 	private String description;
 	private Level level;
 
@@ -41,7 +41,7 @@ public class CalculatedMember implements Member, Named, Calculated {
 			Member parentMember,
 			Type memberType,
 			String formula,
-			Map<Property, String> properties)
+			Map<String, String> properties)
 	{
 		this.dimension = dimension;
 		this.hierarchy = hierarchy;
@@ -96,30 +96,18 @@ public class CalculatedMember implements Member, Named, Calculated {
 		return memberType;
 	}
 
-
-    /* (non-Javadoc)
-	 * @see org.saiku.query.metadata.Calculated#getPropertyValueMap()
-	 */
-    @Override
-	public Map<Property, Object> getPropertyValueMap() {
-        return properties;
-    }
-    
-	@Override
-	public NamedList<Property> getProperties() {
-		return level.getProperties();
+	public Map<String, String> getFormatProperties() {
+		return properties;
 	}
-
-
-	public Object getPropertyValue(Property key) throws OlapException {
+	
+	public String getFormatPropertyValue(String key) throws OlapException {
 		if (properties.containsKey(key)) {
 			return properties.get(key);
 		}
 		return null;
 	}
 
-	@Override
-	public void setProperty(Property key, Object value) throws OlapException {
+	public void setFormatProperty(String key, String value) throws OlapException {
 		properties.put(key, value);
 	}
 
@@ -269,6 +257,38 @@ public class CalculatedMember implements Member, Named, Calculated {
 		return false;
 	}
 
+
+
+	/**
+	 * DO NOT USE THIS
+	 */
+	@Deprecated
+	public NamedList<Property> getProperties() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+	/**
+	 * DO NOT USE THIS
+	 */
+	@Deprecated
+	public Object getPropertyValue(Property arg0) throws OlapException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+	/**
+	 * DO NOT USE THIS
+	 */
+	@Deprecated
+	public void setProperty(Property arg0, Object arg1) throws OlapException {
+		// TODO Auto-generated method stub
+		
+	}
 
 
 	/* (non-Javadoc)

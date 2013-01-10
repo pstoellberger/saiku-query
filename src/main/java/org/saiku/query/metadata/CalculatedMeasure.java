@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.olap4j.OlapException;
 import org.olap4j.impl.Named;
-import org.olap4j.impl.NamedListImpl;
 import org.olap4j.mdx.IdentifierNode;
 import org.olap4j.mdx.ParseTreeNode;
 import org.olap4j.metadata.Datatype;
@@ -27,7 +26,7 @@ public class CalculatedMeasure implements Measure, Named, Calculated {
 	private String uniqueName;
 	private String formula;
 	
-	private Map<Property, Object> properties = new HashMap<Property, Object>();
+	private Map<String, String> properties = new HashMap<String, String>();
 	private String description;
 	private Level level;
 	private Datatype datatype;
@@ -38,7 +37,7 @@ public class CalculatedMeasure implements Measure, Named, Calculated {
 			String name,
 			String description,
 			String formula,
-			Map<Property, String> properties)
+			Map<String, String> properties)
 	{
 		this.dimension = hierarchy.getDimension();
 		this.hierarchy = hierarchy;
@@ -47,6 +46,9 @@ public class CalculatedMeasure implements Measure, Named, Calculated {
 		this.description = description;
 		this.formula = formula;
 		this.uniqueName = IdentifierNode.ofNames(hierarchy.getName(), name).toString();
+		if (properties != null) {
+			properties.putAll(properties);
+		}
 	}
 	
 
@@ -69,27 +71,18 @@ public class CalculatedMeasure implements Measure, Named, Calculated {
 	}
 
 
-    public Map<Property, Object> getPropertyValueMap() {
-        return properties;
-    }
-    
-	@Override
-	public NamedList<Property> getProperties() {
-		NamedList<Property> p = new NamedListImpl(properties.keySet());
-		return p;
-		
+	public Map<String, String> getFormatProperties() {
+		return properties;
 	}
-
-
-	public Object getPropertyValue(Property key) throws OlapException {
+	
+	public String getFormatPropertyValue(String key) throws OlapException {
 		if (properties.containsKey(key)) {
 			return properties.get(key);
 		}
 		return null;
 	}
 
-	@Override
-	public void setProperty(Property key, Object value) throws OlapException {
+	public void setFormatProperty(String key, String value) throws OlapException {
 		properties.put(key, value);
 	}
 
@@ -280,6 +273,38 @@ public class CalculatedMeasure implements Measure, Named, Calculated {
 			return false;
 		return true;
 	}
-	
+
+
+
+	/**
+	 * DO NOT USE THIS
+	 */
+	@Deprecated
+	public NamedList<Property> getProperties() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+	/**
+	 * DO NOT USE THIS
+	 */
+	@Deprecated
+	public Object getPropertyValue(Property arg0) throws OlapException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+	/**
+	 * DO NOT USE THIS
+	 */
+	@Deprecated
+	public void setProperty(Property arg0, Object arg1) throws OlapException {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

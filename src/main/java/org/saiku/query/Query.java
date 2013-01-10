@@ -328,6 +328,15 @@ public class Query {
     	return calculatedMeasures.get(name);
     }
     
+    public Measure getMeasure(String name) {
+    	for (Measure m : cube.getMeasures()) {
+    		if (name != null && name.equals(m.getName())) {
+    			return m;
+    		}
+    	}
+    	return null;
+    }
+    
     public QueryDetails getDetails() {
     	return details;
     }
