@@ -121,12 +121,12 @@ public class Query {
      * Returns the Olap4j's QueryHierarchy object according to the name
      * given as a parameter. If no hierarchy of the given name is found,
      * a null value will be returned.
-     * @param uniqueName The name of the hierarchy you want the object for.
+     * @param name The name of the hierarchy you want the object for.
      * @return The hierarchy object, null if no hierarchy of that
      * name can be found.
      */
-    public QueryHierarchy getHierarchy(String uniqueName) {
-        return hierarchyMap.get(uniqueName);
+    public QueryHierarchy getHierarchy(String name) {
+        return hierarchyMap.get(name);
     }
 
     /**
@@ -141,7 +141,7 @@ public class Query {
     	if (hierarchy == null) {
     		return null;
     	}
-    	return hierarchyMap.get(hierarchy.getUniqueName());
+    	return hierarchyMap.get(hierarchy.getName());
     }
 
 
@@ -149,14 +149,13 @@ public class Query {
      * Returns the Olap4j's QueryLevel object according to the name
      * given as a parameter. If no Level of the given name is found,
      * a null value will be returned.
-     * @param uniqueName The name of the Level you want the object for.
+     * @param name The name of the Level you want the object for.
      * @return The QueryLevel object, null if no Level of that
      * name can be found.
      */
-    public QueryLevel getLevel(Hierarchy hierarchy, String uniqueName) {
-        QueryHierarchy h =  hierarchyMap.get(hierarchy.getUniqueName());
-//        return h.getLevel(uniqueName);
-        return null;
+    public QueryLevel getLevel(Hierarchy hierarchy, String name) {
+        QueryHierarchy h =  hierarchyMap.get(hierarchy.getName());
+        return h.getActiveLevel(name);
     }
     
     /**
@@ -169,7 +168,7 @@ public class Query {
      * name can be found.
      */
     public QueryLevel getLevel(Level level) {
-        return getLevel(level.getHierarchy(), level.getUniqueName());
+        return getLevel(level.getHierarchy(), level.getName());
     }
 
 
