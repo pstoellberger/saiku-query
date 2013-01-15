@@ -5,7 +5,6 @@ import junit.framework.TestCase;
 import org.olap4j.Axis;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
-import org.olap4j.OlapException;
 import org.olap4j.OlapWrapper;
 import org.olap4j.impl.IdentifierParser;
 import org.olap4j.mdx.SelectNode;
@@ -41,7 +40,7 @@ public class QueryTest extends TestCase {
 			SelectNode mdx = query.getSelect();
 			String mdxString = mdx.toString();
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 			String expectedQuery = 
 					"WITH\n"
@@ -50,12 +49,12 @@ public class QueryTest extends TestCase {
 							+ "SELECT\n"
 							+ "[AxisCOLUMNS] ON COLUMNS\n"
 							+ "FROM [Sales]";
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
-			String s = TestContext.toString(results);
-			//	        System.out.println(TestContext.toJavaString(s));
-			TestContext.assertEqualsVerbose(
+			String s = TestUtil.toString(results);
+			//	        System.out.println(TestUtil.toJavaString(s));
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 							+ "{}\n"
 							+ "Axis #1:\n"
@@ -89,7 +88,7 @@ public class QueryTest extends TestCase {
 			SelectNode mdx = query.getSelect();
 			String mdxString = mdx.toString();
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 			String expectedQuery = 
 					"WITH\n"
@@ -98,12 +97,12 @@ public class QueryTest extends TestCase {
 							+ "SELECT\n"
 							+ "[AxisCOLUMNS] ON COLUMNS\n"
 							+ "FROM [Sales]";
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
-			String s = TestContext.toString(results);
-			//	        System.out.println(TestContext.toJavaString(s));
-			TestContext.assertEqualsVerbose(
+			String s = TestUtil.toString(results);
+			//	        System.out.println(TestUtil.toJavaString(s));
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 							+ "{}\n"
 							+ "Axis #1:\n"
@@ -158,7 +157,7 @@ public class QueryTest extends TestCase {
 			SelectNode mdx = query.getSelect();
 			String mdxString = mdx.toString();
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 			String expectedQuery = 
 					"WITH\n"
@@ -172,12 +171,12 @@ public class QueryTest extends TestCase {
 							+ "[AxisCOLUMNS] ON COLUMNS,\n"
 							+ "[AxisROWS] ON ROWS\n"
 							+ "FROM [Sales]";
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
-			String s = TestContext.toString(results);
-			//	        System.out.println(TestContext.toJavaString(s));
-			TestContext.assertEqualsVerbose(
+			String s = TestUtil.toString(results);
+			//	        System.out.println(TestUtil.toJavaString(s));
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 							+ "{}\n"
 							+ "Axis #1:\n"
@@ -240,7 +239,7 @@ public class QueryTest extends TestCase {
 			SelectNode mdx = query.getSelect();
 			String mdxString = mdx.toString();
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 			String expectedQuery = 
 					"WITH\n"
@@ -254,12 +253,12 @@ public class QueryTest extends TestCase {
 							+ "[AxisCOLUMNS] ON COLUMNS,\n"
 							+ "[AxisROWS] ON ROWS\n"
 							+ "FROM [Sales]";
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
-			String s = TestContext.toString(results);
-			//	        System.out.println(TestContext.toJavaString(s));
-			TestContext.assertEqualsVerbose(
+			String s = TestUtil.toString(results);
+			//	        System.out.println(TestUtil.toJavaString(s));
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 							+ "{}\n"
 							+ "Axis #1:\n"
@@ -304,7 +303,7 @@ public class QueryTest extends TestCase {
 			SelectNode mdx = query.getSelect();
 			String mdxString = mdx.toString();
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 			String expectedQuery = 
 	                "WITH\n"
@@ -317,11 +316,11 @@ public class QueryTest extends TestCase {
 	                        + "[AxisROWS] ON ROWS\n"
 	                        + "FROM [Sales]";
 	                        
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
-			String s = TestContext.toString(results);
-			TestContext.assertEqualsVerbose(
+			String s = TestUtil.toString(results);
+			TestUtil.assertEqualsVerbose(
 	                "Axis #0:\n"
 	                        + "{}\n"
 	                        + "Axis #1:\n"
@@ -352,7 +351,7 @@ public class QueryTest extends TestCase {
 		                    + "[AxisROWS] ON ROWS\n"
 		                    + "FROM [Sales]";
 	                        
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			query.getDetails().setLocation(Location.TOP);
 			mdx = query.getSelect();
@@ -370,10 +369,10 @@ public class QueryTest extends TestCase {
 		                    + "[AxisROWS] ON ROWS\n"
 		                    + "FROM [Sales]";
 	                        
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 			
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 
 		} catch (Exception e) {
@@ -404,7 +403,7 @@ public class QueryTest extends TestCase {
 			SelectNode mdx = query.getSelect();
 			String mdxString = mdx.toString();
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 			String expectedQuery = 
 					"WITH\n"
@@ -417,12 +416,12 @@ public class QueryTest extends TestCase {
 			                + "[AxisROWS] ON ROWS\n"
 			                + "FROM [Sales]";
 	                        
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
-			String s = TestContext.toString(results);
+			String s = TestUtil.toString(results);
 
-			TestContext.assertEqualsVerbose(
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 			                + "{}\n"
 			                + "Axis #1:\n"
@@ -440,7 +439,7 @@ public class QueryTest extends TestCase {
 
 			
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 
 		} catch (Exception e) {
@@ -471,7 +470,7 @@ public class QueryTest extends TestCase {
 			SelectNode mdx = query.getSelect();
 			String mdxString = mdx.toString();
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 			String expectedQuery = 
 					"WITH\n"
@@ -484,11 +483,11 @@ public class QueryTest extends TestCase {
 			                + "NON EMPTY [AxisROWS] ON ROWS\n"
 			                + "FROM [Sales]";
 	                        
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
-			String s = TestContext.toString(results);
-			TestContext.assertEqualsVerbose(
+			String s = TestUtil.toString(results);
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 			                + "{}\n"
 			                + "Axis #1:\n"
@@ -517,7 +516,7 @@ public class QueryTest extends TestCase {
 			mdx = query.getSelect();
 			mdxString = mdx.toString();
 			if (TestContext.DEBUG) {
-				System.out.println(TestContext.toJavaString(mdxString));
+				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 			expectedQuery = 
 					"WITH\n"
@@ -530,11 +529,11 @@ public class QueryTest extends TestCase {
 			                + "NON EMPTY [AxisROWS] ON ROWS\n"
 			                + "FROM [Sales]";
 	                        
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			results = query.execute();
-			s = TestContext.toString(results);
-			TestContext.assertEqualsVerbose(
+			s = TestUtil.toString(results);
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 			                + "{}\n"
 			                + "Axis #1:\n"
@@ -594,11 +593,11 @@ public class QueryTest extends TestCase {
 			                + "NON EMPTY [AxisROWS] ON ROWS\n"
 			                + "FROM [Sales]";
 	                        
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
-			String s = TestContext.toString(results);
-			TestContext.assertEqualsVerbose(
+			String s = TestUtil.toString(results);
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 			                + "{}\n"
 			                + "Axis #1:\n"
@@ -630,11 +629,11 @@ public class QueryTest extends TestCase {
 			                + "NON EMPTY [AxisROWS] ON ROWS\n"
 			                + "FROM [Sales]";
 	                        
-			TestContext.assertEqualsVerbose(expectedQuery, mdxString);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			results = query.execute();
-			s = TestContext.toString(results);
-			TestContext.assertEqualsVerbose(
+			s = TestUtil.toString(results);
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 			                + "{}\n"
 			                + "Axis #1:\n"

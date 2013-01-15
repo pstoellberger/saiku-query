@@ -71,8 +71,8 @@ public class OlapTest extends TestCase {
 	                        + "                           on rows "
 	                        + "from [Sales]");
 			
-			String s = TestContext.toString(cellSet);
-			TestContext.assertEqualsVerbose(
+			String s = TestUtil.toString(cellSet);
+			TestUtil.assertEqualsVerbose(
 					"Axis #0:\n"
 			                + "{}\n"
 			                + "Axis #1:\n"
