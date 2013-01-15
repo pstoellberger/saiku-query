@@ -80,9 +80,9 @@ public class QueryTest extends TestCase {
 			QueryHierarchy products = query.getHierarchy("Product");
 
 			products.includeLevel("Product Family");
-			products.exclude("[Product].[Food]");
-			products.include("[Product].[Drink].[Beverages]");
-			products.include("[Product].[Non-Consumable].[Checkout]");
+			products.excludeMember("[Product].[Food]");
+			products.includeMember("[Product].[Drink].[Beverages]");
+			products.includeMember("[Product].[Non-Consumable].[Checkout]");
 			qa.addHierarchy(products);
 
 			SelectNode mdx = query.getSelect();
@@ -140,7 +140,7 @@ public class QueryTest extends TestCase {
 
 			products.includeCalculatedMember(cm);
 			products.includeLevel("Product Family");
-			products.exclude("[Product].[Non-Consumable]");
+			products.excludeMember("[Product].[Non-Consumable]");
 			NFilter top2filter = new NFilter(MdxFunctionType.TopCount, 2, "Measures.[Unit Sales]");
 			products.addFilter(top2filter);
 			columns.addHierarchy(products);
@@ -150,7 +150,7 @@ public class QueryTest extends TestCase {
 			columns.addHierarchy(edu);
 
 			QueryHierarchy gender = query.getHierarchy("Gender");
-			gender.include("[Gender].[F]");
+			gender.includeMember("[Gender].[F]");
 			rows.addHierarchy(gender);
 
 
@@ -233,7 +233,7 @@ public class QueryTest extends TestCase {
 			columns.addHierarchy(products);
 
 			QueryHierarchy gender = query.getHierarchy("Gender");
-			gender.include("[Gender].[F]");
+			gender.includeMember("[Gender].[F]");
 			rows.addHierarchy(gender);
 
 			SelectNode mdx = query.getSelect();
@@ -283,7 +283,7 @@ public class QueryTest extends TestCase {
 			QueryAxis rows = query.getAxis(Axis.ROWS);
 			QueryAxis columns = query.getAxis(Axis.COLUMNS);
 			QueryHierarchy products = query.getHierarchy("Product");
-			products.include("[Product].[Drink]");
+			products.includeMember("[Product].[Drink]");
 			rows.addHierarchy(products);
 
 			CalculatedMeasure cm =
@@ -397,7 +397,7 @@ public class QueryTest extends TestCase {
 			rows.addHierarchy(time);
 			
 			QueryHierarchy products = query.getHierarchy("Product");
-			products.include("[Product].[Drink]");
+			products.includeMember("[Product].[Drink]");
 			columns.addHierarchy(products);
 			
 			SelectNode mdx = query.getSelect();
@@ -464,7 +464,7 @@ public class QueryTest extends TestCase {
 			rows.addHierarchy(time);
 			
 			QueryHierarchy products = query.getHierarchy("Product");
-			products.include("[Product].[Drink]");
+			products.includeMember("[Product].[Drink]");
 			columns.addHierarchy(products);
 			
 			SelectNode mdx = query.getSelect();
@@ -577,7 +577,7 @@ public class QueryTest extends TestCase {
 			rows.addHierarchy(time);
 			
 			QueryHierarchy products = query.getHierarchy("Product");
-			products.include("[Product].[Drink]");
+			products.includeMember("[Product].[Drink]");
 			columns.addHierarchy(products);
 			
 			SelectNode mdx = query.getSelect();

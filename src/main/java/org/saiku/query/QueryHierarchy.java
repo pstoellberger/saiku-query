@@ -165,18 +165,33 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     	return ql;
     }
     
+    public void excludeLevel(String levelName) {
+    	QueryLevel ql = queryLevels.get(levelName);
+    	if (activeLevels.contains(ql)) {
+    		activeLevels.remove(ql);
+    	}
+    }
+
+    public void excludeLevel(Level l) throws OlapException {
+    	QueryLevel ql = queryLevels.get(l.getName());
+    	if (!activeLevels.contains(l)) {
+    		activeLevels.remove(ql);
+    	}
+    }
+
+    
     public void includeMembers(List<Member> members) throws OlapException {
     	for (Member m : members) {
     		includeMember(m);
     	}
     }
 
-    public void include(String uniqueMemberName) throws OlapException {
+    public void includeMember(String uniqueMemberName) throws OlapException {
     	List<IdentifierSegment> nameParts = IdentifierParser.parseIdentifier(uniqueMemberName);
-    	this.include(nameParts);
+    	this.includeMember(nameParts);
     }
     
-    public void include(List<IdentifierSegment> nameParts) throws OlapException {
+    public void includeMember(List<IdentifierSegment> nameParts) throws OlapException {
         Member member = this.query.getCube().lookupMember(nameParts);
         if (member == null) {
             throw new OlapException(
@@ -198,6 +213,18 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     	}
     	activeCalculatedMembers.add(m);
     }
+    
+    public void excludeCalculatedMember(CalculatedMember m) throws OlapException {
+    	Hierarchy h = m.getHierarchy();
+    	if (!h.equals(hierarchy)) {
+    		throw new OlapException(
+    				"You cannot include the calculated member " + m.getUniqueName() 
+    				+ " on hierarchy " + hierarchy.getUniqueName());
+    	}
+    	calculatedMembers.remove(m);
+    	activeCalculatedMembers.remove(m);
+    }
+    
     public void includeMember(Member m) throws OlapException {
     	Level l = m.getLevel();
     	if (!l.getHierarchy().equals(hierarchy)) {
@@ -212,12 +239,12 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     	ql.include(m);
     }
     
-    public void exclude(String uniqueMemberName) throws OlapException {
+    public void excludeMember(String uniqueMemberName) throws OlapException {
     	List<IdentifierSegment> nameParts = IdentifierParser.parseIdentifier(uniqueMemberName);
-    	this.exclude(nameParts);
+    	this.excludeMember(nameParts);
     }
     
-    public void exclude(List<IdentifierSegment> nameParts) throws OlapException {
+    public void excludeMember(List<IdentifierSegment> nameParts) throws OlapException {
         Member member = this.query.getCube().lookupMember(nameParts);
         if (member == null) {
             throw new OlapException(
