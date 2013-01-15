@@ -215,12 +215,6 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     }
     
     public void excludeCalculatedMember(CalculatedMember m) throws OlapException {
-    	Hierarchy h = m.getHierarchy();
-    	if (!h.equals(hierarchy)) {
-    		throw new OlapException(
-    				"You cannot include the calculated member " + m.getUniqueName() 
-    				+ " on hierarchy " + hierarchy.getUniqueName());
-    	}
     	calculatedMembers.remove(m);
     	activeCalculatedMembers.remove(m);
     }
