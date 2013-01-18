@@ -244,16 +244,16 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
             throw new OlapException(
                 "Unable to find a member with name " + nameParts);
         }
-        this.exclude(member);
+        this.excludeMember(member);
     }
     
     public void excludeMembers(List<Member> members) {
     	for (Member m : members) {
-    		exclude(m);
+    		excludeMember(m);
     	}
     }
 
-    public void exclude(Member m) {
+    public void excludeMember(Member m) {
     	Level l = m.getLevel();
     	if (!l.getHierarchy().equals(hierarchy)) {
     		throw new IllegalArgumentException("You cannot exclude member " + m.getUniqueName() + " on hierarchy " + hierarchy.getUniqueName());
