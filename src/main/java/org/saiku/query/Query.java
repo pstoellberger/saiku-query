@@ -437,23 +437,22 @@ public class Query {
     	return this.defaultHierarchizeMode;
     }
     
-    public void setDefaultVisualTotals(boolean visualTotals) {
+    public void setVisualTotals(boolean visualTotals) {
     	if (!visualTotals) {
 			this.visualTotalsPattern = null;
 		}
     	this.visualTotals = visualTotals;
     }
     
-    public boolean getDefaultVisualTotals() {
+    public boolean isVisualTotals() {
     	return this.visualTotals;
     }
     	
-	public void setDefaultVisualTotalsPattern(String pattern) {
+	public void setVisualTotalsPattern(String pattern) {
 		this.visualTotalsPattern = pattern;
-		this.visualTotals = true;
 	}
 	
-	public String getDefaultVisualTotalsPattern() {
+	public String getVisualTotalsPattern() {
 		return visualTotalsPattern;
 	}
     

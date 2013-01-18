@@ -83,7 +83,7 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
 	 * @return is visualTotals
 	 */
 	public boolean isVisualTotals() {
-		return (visualTotals | query.getDefaultVisualTotals());
+		return (visualTotals | query.isVisualTotals());
 	}
 
 	/**
@@ -102,7 +102,7 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
 	}
 	
 	public String getVisualTotalsPattern() {
-		return (visualTotalsPattern == null ? query.getDefaultVisualTotalsPattern() : visualTotalsPattern);
+		return (visualTotalsPattern == null ? query.getVisualTotalsPattern() : visualTotalsPattern);
 	}
 	
 	public boolean needsHierarchize() {
