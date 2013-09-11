@@ -166,7 +166,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 
 		if (!h.isMdxSetExpression()) {
 			// TODO probably not the best idea
-			if (h.getActiveQueryLevels().size() == 0) {
+			if (h.getActiveQueryLevels().size() == 0 && h.getActiveCalculatedMembers().size() == 0) {
 				return new CallNode(null, "{}", Syntax.Braces, new ArrayList<ParseTreeNode>());
 				
 			}

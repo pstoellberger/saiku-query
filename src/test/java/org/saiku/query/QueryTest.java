@@ -217,7 +217,6 @@ public class QueryTest extends TestCase {
 			                + "SELECT\n"
 			                + "[~COLUMNS] ON COLUMNS\n"
 			                + "FROM [Sales]";
-			System.out.println(expectedQuery);
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
