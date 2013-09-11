@@ -2,6 +2,7 @@ package org.saiku.query;
 
 import java.util.List;
 
+import org.olap4j.Axis;
 import org.olap4j.OlapException;
 import org.olap4j.impl.IdentifierParser;
 import org.olap4j.impl.Named;

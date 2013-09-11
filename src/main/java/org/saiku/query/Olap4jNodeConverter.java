@@ -192,13 +192,21 @@ public class Olap4jNodeConverter extends NodeConverter {
 				levels.add(levelNode);
 			}
 			ParseTreeNode levelSet = null;
+			if (h.getAxis().isLowestLevelsOnly()) {
+				ParseTreeNode lowestLevel = levels.remove(levels.size() -1);
+				levels.clear();
+				levels.add(lowestLevel);
+			}
 			if (levels.size() > 1) {
 				levelSet = generateListSetCall(levels);
 			} else if (levels.size() == 1) {
 				levelSet = levels.get(0);
 			}
 
-			if (h.needsHierarchize()) {
+			// hierarchize() on the hierarchy is only needed if we select more than 1 level and on axes != FILTER
+			if ( !Axis.FILTER.equals(h.getAxis().getLocation()) 
+					&& !h.getAxis().isLowestLevelsOnly()
+					&& h.needsHierarchize()) {
 				levelSet = new CallNode(
 						null,
 						"Hierarchize",

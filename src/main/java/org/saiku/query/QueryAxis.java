@@ -61,6 +61,10 @@ public class QueryAxis extends AbstractSortableQuerySet {
     public Query getQuery() {
     	return query;
     }
+    
+    public boolean isLowestLevelsOnly() {
+    	return (query.isLowestLevelsOnly() | Axis.FILTER.equals(location));
+    }
 
 	public List<QueryHierarchy> getQueryHierarchies() {
 		return hierarchies;

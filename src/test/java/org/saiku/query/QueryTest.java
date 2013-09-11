@@ -237,13 +237,85 @@ public class QueryTest extends TestCase {
 							+ "Row #0: 810\n"
 							+ "Row #0: 969\n",
 							s);
-
-
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail();
 		}
 	}
+	
+	public void testLowestLevelsOnly() {
+
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query", cube);
+			query.setLowestLevelsOnly(true);
+			
+			QueryAxis columns = query.getAxis(Axis.COLUMNS);
+			QueryAxis filter = query.getAxis(Axis.FILTER);
+			QueryHierarchy products = query.getHierarchy("Product");
+
+			products.includeLevel("Product Family");
+			products.excludeMember("[Product].[Drink]");
+			products.includeMember("[Product].[Drink].[Beverages]");
+			products.includeMember("[Product].[Non-Consumable].[Checkout]");
+			products.includeLevel("Product Category");
+			columns.addHierarchy(products);
+			
+			QueryHierarchy time = query.getHierarchy("Time");
+
+			time.includeMember("[Time].[1997].[Q1]");
+			time.includeLevel("Month");
+			
+			filter.addHierarchy(time);
+			
+
+			SelectNode mdx = query.getSelect();
+			String mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestUtil.toJavaString(mdxString));
+			}
+			String expectedQuery = 
+					"WITH\n"
+			                + "SET [~Time_Quarter] AS\n"
+			                + "    {[Time].[1997].[Q1]}\n"
+			                + "SET [~Time_Month] AS\n"
+			                + "    Exists({[Time].[Month].Members}, [~Time_Quarter])\n"
+			                + "SET [~FILTER] AS\n"
+			                + "    [~Time_Month]\n"
+			                + "SET [~Product_Product Family] AS\n"
+			                + "    Except({[Product].[Product Family].Members}, {[Product].[Drink]})\n"
+			                + "SET [~Product_Product Department] AS\n"
+			                + "    Exists({[Product].[Drink].[Beverages], [Product].[Non-Consumable].[Checkout]}, [~Product_Product Family])\n"
+			                + "SET [~Product_Product Category] AS\n"
+			                + "    Exists({[Product].[Product Category].Members}, [~Product_Product Department])\n"
+			                + "SET [~COLUMNS] AS\n"
+			                + "    [~Product_Product Category]\n"
+			                + "SELECT\n"
+			                + "[~COLUMNS] ON COLUMNS\n"
+			                + "FROM [Sales]\n"
+			                + "WHERE [~FILTER]";
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+
+			CellSet results = query.execute();
+			String s = TestUtil.toString(results);
+//				        System.out.println(TestUtil.toJavaString(s));
+			TestUtil.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{[Time].[1997].[Q1].[1]}\n"
+			                + "{[Time].[1997].[Q1].[2]}\n"
+			                + "{[Time].[1997].[Q1].[3]}\n"
+			                + "Axis #1:\n"
+			                + "{[Product].[Non-Consumable].[Checkout].[Hardware]}\n"
+			                + "{[Product].[Non-Consumable].[Checkout].[Miscellaneous]}\n"
+			                + "Row #0: 259\n"
+			                + "Row #0: 293\n",
+							s);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
 	public void testBasicCalculatedMember() {
 
 		try {

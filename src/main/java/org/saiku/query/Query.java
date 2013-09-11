@@ -50,6 +50,7 @@ public class Query {
 	private HierarchizeMode defaultHierarchizeMode = HierarchizeMode.PRE;
 	private boolean visualTotals = false;
 	private String visualTotalsPattern;
+	private boolean lowestLevelsOnly = false;
 	
     /**
      * Constructs a Query object.
@@ -454,6 +455,14 @@ public class Query {
 	
 	public String getVisualTotalsPattern() {
 		return visualTotalsPattern;
+	}
+	
+	public void setLowestLevelsOnly(boolean lowest) {
+		this.lowestLevelsOnly = lowest;
+	}
+	
+	public boolean isLowestLevelsOnly() {
+		return this.lowestLevelsOnly;
 	}
     
 //  /**
