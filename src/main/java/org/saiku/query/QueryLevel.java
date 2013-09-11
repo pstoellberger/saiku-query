@@ -13,6 +13,9 @@ public class QueryLevel extends AbstractQuerySet implements Named {
 	
 	private List<Member> inclusions = new ArrayList<Member>();
 	private List<Member> exclusions = new ArrayList<Member>();
+	private Member rangeStart = null;
+	private Member rangeEnd = null;
+	private boolean range = false;
 
     public QueryLevel(QueryHierarchy hierarchy, Level level) {
         super();
@@ -39,7 +42,11 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     
     @Override
     public boolean isSimple() {
-    	return (super.isSimple() && inclusions.isEmpty() && exclusions.isEmpty());
+    	return (super.isSimple() && inclusions.isEmpty() && exclusions.isEmpty() && rangeStart == null && rangeEnd == null);
+    }
+    
+    public boolean isRange() {
+    	return (rangeStart != null && rangeEnd != null);
     }
 
     /**
@@ -61,6 +68,14 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     	return exclusions;
     }
     
+	public Member getRangeStart() {
+		return rangeStart;
+	}
+	
+	public Member getRangeEnd() {
+		return rangeEnd;
+	}
+
     protected void include(Member m) {
     	if(!inclusions.contains(m)) {
     		inclusions.add(m);
@@ -74,6 +89,11 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     	if(!exclusions.contains(m)) {
     		exclusions.add(m);
     	}
+    }
+    
+    protected void setRange(Member start, Member end) {
+    	rangeStart = start;
+    	rangeEnd = end;
     }
     
 

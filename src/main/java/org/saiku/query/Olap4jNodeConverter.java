@@ -30,6 +30,7 @@ import org.olap4j.mdx.CubeNode;
 import org.olap4j.mdx.IdentifierNode;
 import org.olap4j.mdx.LevelNode;
 import org.olap4j.mdx.LiteralNode;
+import org.olap4j.mdx.MemberNode;
 import org.olap4j.mdx.ParseTreeNode;
 import org.olap4j.mdx.SelectNode;
 import org.olap4j.mdx.Syntax;
@@ -98,17 +99,19 @@ public class Olap4jNodeConverter extends NodeConverter {
 		if (!axis.isMdxSetExpression()) {
 			List<ParseTreeNode> hierarchies = new ArrayList<ParseTreeNode>();
 
-			for(QueryHierarchy h : axis.getQueryHierarchies()) {
-				ParseTreeNode hierarchyNode = toHierarchy(withList, h);
-				hierarchies.add(hierarchyNode);
-			}
-			if (hierarchies.size() == 1) {
-				axisExpression = hierarchies.get(0);
-			}
-			else if (hierarchies.size() > 1) {
+			int hierarchyCount = axis.getQueryHierarchies().size();
+			if (hierarchyCount == 1) {
+				axisExpression = toHierarchy(withList, axis.getQueryHierarchies().get(0));
+			} else if (hierarchyCount > 1) {
+				for(QueryHierarchy h : axis.getQueryHierarchies()) {
+					ParseTreeNode hierarchyNode = toHierarchy(withList, h);
+					WithSetNode withNode = new WithSetNode(null, getIdentifier(axis, h), hierarchyNode);
+					withList.add(withNode);		
+					hierarchies.add(withNode.getIdentifier());
+				}
 				axisExpression = generateCrossJoin(hierarchies);
 			} else {
-
+				// TODO do we need to handle hierarchy count == 0 ?
 			}
 
 		}
@@ -162,15 +165,31 @@ public class Olap4jNodeConverter extends NodeConverter {
 		ParseTreeNode hierarchySet = null;
 
 		if (!h.isMdxSetExpression()) {
+			// TODO probably not the best idea
+			if (h.getActiveQueryLevels().size() == 0) {
+				return new CallNode(null, "{}", Syntax.Braces, new ArrayList<ParseTreeNode>());
+				
+			}
 			List<ParseTreeNode> levels = new ArrayList<ParseTreeNode>();
 			ParseTreeNode existSet = null;
+			boolean allSimple = true;
+			for (QueryLevel l : h.getActiveQueryLevels()) {
+				allSimple = allSimple & l != null & l.isSimple();
+			}
 			for (QueryLevel l : h.getActiveQueryLevels()) {
 				ParseTreeNode levelNode = toLevel(l);
 				levelNode = toQuerySet(levelNode, l);
-				levels.add(levelNode);
-				if (!l.isSimple()) {
+				
+				if (h.isConsistent() && existSet != null) {
+					levelNode = new CallNode(null, "Exists", Syntax.Function, levelNode, existSet);
+				}
+				if (!allSimple && h.getActiveQueryLevels().size() > 1) {
+					WithSetNode withNode = new WithSetNode(null, getIdentifier(h, l), levelNode);
+					withList.add(withNode);
+					levelNode = withNode.getIdentifier();
 					existSet = levelNode;
 				}
+				levels.add(levelNode);
 			}
 			ParseTreeNode levelSet = null;
 			if (levels.size() > 1) {
@@ -178,11 +197,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 			} else if (levels.size() == 1) {
 				levelSet = levels.get(0);
 			}
-			
-			if (h.isConsistent() && levels.size() > 1 && existSet != null) {
-				levelSet = new CallNode(null, "Exists", Syntax.Function, levelSet, existSet);
-			}
-			
+
 			if (h.needsHierarchize()) {
 				levelSet = new CallNode(
 						null,
@@ -238,8 +253,16 @@ public class Olap4jNodeConverter extends NodeConverter {
 		exclusions.addAll(level.getExclusions());
 		
 		ParseTreeNode baseNode = new CallNode(null, "Members", Syntax.Property, new LevelNode(null, level.getLevel()));
+		// TODO shall we really wrap all <Level>.Members into {} ?
 		baseNode = generateSetCall(baseNode);
 		
+		if (level.isRange()) {
+			List<ParseTreeNode> args = new ArrayList<ParseTreeNode>();
+			args.add(new MemberNode(null, level.getRangeStart()));
+			args.add(new MemberNode(null, level.getRangeEnd()));
+			
+			baseNode = new CallNode(null, ":", Syntax.Infix, args);
+		}
 		if (inclusions.size() > 0) {
 			baseNode = toOlap4jMemberSet(inclusions);
 		}

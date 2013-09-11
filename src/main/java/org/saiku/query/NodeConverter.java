@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang.StringUtils;
 import org.olap4j.mdx.CallNode;
 import org.olap4j.mdx.IdentifierNode;
 import org.olap4j.mdx.MemberNode;
@@ -125,8 +126,16 @@ public class NodeConverter {
 		return wm;
 	}
 	
-	protected static IdentifierNode getIdentifier(QueryAxis axis) {
-		return IdentifierNode.ofNames("Axis" + axis.getLocation().name());
+	protected static IdentifierNode getIdentifier(AbstractQuerySet... identifiers) {
+		String identifier = "";
+		for (int i = 0; i < identifiers.length; i ++) {
+			if (i == 0) {
+				identifier = "~" + identifiers[0].getName();
+			} else {
+				identifier += "_" + identifiers[i].getName();
+			}
+		}
+		return IdentifierNode.ofNames(identifier);
 	}
 
 

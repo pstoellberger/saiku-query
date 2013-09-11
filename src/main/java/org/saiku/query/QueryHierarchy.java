@@ -146,7 +146,7 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     
     public QueryLevel includeLevel(String levelName) {
     	QueryLevel ql = queryLevels.get(levelName);
-    	if (!activeLevels.contains(ql)) {
+    	if (ql != null && !activeLevels.contains(ql)) {
     		activeLevels.add(ql);
     	}
     	return ql;
@@ -159,7 +159,7 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     				+ " on hierarchy " + hierarchy.getUniqueName());
     	}
     	QueryLevel ql = queryLevels.get(l.getName());
-    	if (!activeLevels.contains(l)) {
+    	if (ql != null && !activeLevels.contains(l)) {
     		activeLevels.add(ql);
     	}
     	return ql;
@@ -167,14 +167,14 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     
     public void excludeLevel(String levelName) {
     	QueryLevel ql = queryLevels.get(levelName);
-    	if (activeLevels.contains(ql)) {
+    	if (ql != null && activeLevels.contains(ql)) {
     		activeLevels.remove(ql);
     	}
     }
 
     public void excludeLevel(Level l) throws OlapException {
     	QueryLevel ql = queryLevels.get(l.getName());
-    	if (!activeLevels.contains(l)) {
+    	if (ql != null && !activeLevels.contains(l)) {
     		activeLevels.remove(ql);
     	}
     }
@@ -231,6 +231,25 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     		activeLevels.add(ql);
     	}
     	ql.include(m);
+    }
+    
+    public void includeRange(Member start, Member end) throws OlapException {
+    	Level l = start.getLevel();
+    	if (!start.getLevel().equals(end.getLevel())) {
+    		throw new OlapException(
+    				"A range selection must include members from the same level ("
+    				+ start.getLevel().getName() + " vs. " + end.getLevel().getName());
+    	}
+    	if (!l.getHierarchy().equals(hierarchy)) {
+    		throw new OlapException(
+    				"Hierarchy not matching. You cannot include a range selection for " + start.getUniqueName() 
+    				+ " and " + end.getUniqueName() + " on hierarchy " + hierarchy.getUniqueName());
+    	}
+    	QueryLevel ql = queryLevels.get(l.getName());
+    	if (!activeLevels.contains(ql)) {
+    		activeLevels.add(ql);
+    	}
+    	ql.setRange(start, end);
     }
     
     public void excludeMember(String uniqueMemberName) throws OlapException {

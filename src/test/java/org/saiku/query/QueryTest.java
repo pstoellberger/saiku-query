@@ -10,6 +10,7 @@ import org.olap4j.impl.IdentifierParser;
 import org.olap4j.mdx.SelectNode;
 import org.olap4j.metadata.Catalog;
 import org.olap4j.metadata.Cube;
+import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.NamedList;
@@ -28,7 +29,63 @@ public class QueryTest extends TestCase {
 
 	private TestContext context = TestContext.instance();
 
-	public void testBasicQuery() {
+
+	public void testSimpleQuery() {
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query", cube);
+			QueryAxis qa = query.getAxis(Axis.COLUMNS);
+			
+			QueryHierarchy products = query.getHierarchy("Product");
+
+			products.includeLevel("Product Family");
+			products.includeLevel("Product Category");
+			qa.addHierarchy(products);
+
+			
+			SelectNode mdx = query.getSelect();
+			String mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestUtil.toJavaString(mdxString));
+			}
+			String expectedQuery = 
+					"WITH\n"
+							+ "SET [~COLUMNS] AS\n"
+							+ "    Hierarchize({{[Product].[Product Family].Members}, {[Product].[Product Category].Members}})\n"
+							+ "SELECT\n"
+							+ "[~COLUMNS] ON COLUMNS\n"
+							+ "FROM [Sales]";
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+
+			QueryHierarchy time = query.getHierarchy("Time.Weekly");
+			time.includeLevel("Week");
+			qa.addHierarchy(time);
+			
+			mdx = query.getSelect();
+			mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestUtil.toJavaString(mdxString));
+			}
+			expectedQuery = 
+					"WITH\n"
+			                + "SET [~COLUMNS_Product] AS\n"
+			                + "    Hierarchize({{[Product].[Product Family].Members}, {[Product].[Product Category].Members}})\n"
+			                + "SET [~COLUMNS_Time.Weekly] AS\n"
+			                + "    {[Time.Weekly].[Week].Members}\n"
+			                + "SET [~COLUMNS] AS\n"
+			                + "    CrossJoin([~COLUMNS_Product], [~COLUMNS_Time.Weekly])\n"
+			                + "SELECT\n"
+			                + "[~COLUMNS] ON COLUMNS\n"
+			                + "FROM [Sales]";
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
+	public void testTopPercentQuery() {
 		try {
 			Cube cube = getFoodmartCube("Sales");
 			Query query = new Query("my query", cube);
@@ -44,10 +101,10 @@ public class QueryTest extends TestCase {
 			}
 			String expectedQuery = 
 					"WITH\n"
-							+ "SET [AxisCOLUMNS] AS\n"
+							+ "SET [~COLUMNS] AS\n"
 							+ "    Hierarchize(TopPercent(Filter({Product.Drink.Children}, ([Measures].[Unit Sales] > 1)), 100, [Measures].[Customer Count]))\n"
 							+ "SELECT\n"
-							+ "[AxisCOLUMNS] ON COLUMNS\n"
+							+ "[~COLUMNS] ON COLUMNS\n"
 							+ "FROM [Sales]";
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
@@ -92,11 +149,15 @@ public class QueryTest extends TestCase {
 			}
 			String expectedQuery = 
 					"WITH\n"
-							+ "SET [AxisCOLUMNS] AS\n"
-						    + "    Hierarchize(Exists({Except({[Product].[Product Family].Members}, {[Product].[Food]}), {[Product].[Drink].[Beverages], [Product].[Non-Consumable].[Checkout]}}, {[Product].[Drink].[Beverages], [Product].[Non-Consumable].[Checkout]}))\n"
-							+ "SELECT\n"
-							+ "[AxisCOLUMNS] ON COLUMNS\n"
-							+ "FROM [Sales]";
+			                + "SET [~Product_Product Family] AS\n"
+			                + "    Except({[Product].[Product Family].Members}, {[Product].[Food]})\n"
+			                + "SET [~Product_Product Department] AS\n"
+			                + "    Exists({[Product].[Drink].[Beverages], [Product].[Non-Consumable].[Checkout]}, [~Product_Product Family])\n"
+			                + "SET [~COLUMNS] AS\n"
+			                + "    Hierarchize({[~Product_Product Family], [~Product_Product Department]})\n"
+			                + "SELECT\n"
+			                + "[~COLUMNS] ON COLUMNS\n"
+			                + "FROM [Sales]";
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
@@ -123,6 +184,67 @@ public class QueryTest extends TestCase {
 		}
 	}
 
+	public void testHierarchyConsistency() {
+
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query", cube);
+			QueryAxis qa = query.getAxis(Axis.COLUMNS);
+			QueryHierarchy products = query.getHierarchy("Product");
+
+			products.includeLevel("Product Family");
+			products.excludeMember("[Product].[Drink]");
+			products.includeMember("[Product].[Drink].[Beverages]");
+			products.includeMember("[Product].[Non-Consumable].[Checkout]");
+			products.includeLevel("Product Category");
+			qa.addHierarchy(products);
+
+			SelectNode mdx = query.getSelect();
+			String mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestUtil.toJavaString(mdxString));
+			}
+			String expectedQuery = 
+					"WITH\n"
+			                + "SET [~Product_Product Family] AS\n"
+			                + "    Except({[Product].[Product Family].Members}, {[Product].[Drink]})\n"
+			                + "SET [~Product_Product Department] AS\n"
+			                + "    Exists({[Product].[Drink].[Beverages], [Product].[Non-Consumable].[Checkout]}, [~Product_Product Family])\n"
+			                + "SET [~Product_Product Category] AS\n"
+			                + "    Exists({[Product].[Product Category].Members}, [~Product_Product Department])\n"
+			                + "SET [~COLUMNS] AS\n"
+			                + "    Hierarchize({[~Product_Product Family], [~Product_Product Department], [~Product_Product Category]})\n"
+			                + "SELECT\n"
+			                + "[~COLUMNS] ON COLUMNS\n"
+			                + "FROM [Sales]";
+			System.out.println(expectedQuery);
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+
+			CellSet results = query.execute();
+			String s = TestUtil.toString(results);
+			//	        System.out.println(TestUtil.toJavaString(s));
+			TestUtil.assertEqualsVerbose(
+					"Axis #0:\n"
+							+ "{}\n"
+							+ "Axis #1:\n"
+							+ "{[Product].[Food]}\n"
+							+ "{[Product].[Non-Consumable]}\n"
+							+ "{[Product].[Non-Consumable].[Checkout]}\n"
+							+ "{[Product].[Non-Consumable].[Checkout].[Hardware]}\n"
+							+ "{[Product].[Non-Consumable].[Checkout].[Miscellaneous]}\n"
+							+ "Row #0: 191,940\n"
+							+ "Row #0: 50,236\n"
+							+ "Row #0: 1,779\n"
+							+ "Row #0: 810\n"
+							+ "Row #0: 969\n",
+							s);
+
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
 	public void testBasicCalculatedMember() {
 
 		try {
@@ -160,17 +282,21 @@ public class QueryTest extends TestCase {
 				System.out.println(TestUtil.toJavaString(mdxString));
 			}
 			String expectedQuery = 
-					"WITH\n"
-							+ "MEMBER [Product].[Consumable] AS\n"
-							+ "    Aggregate({Product.Drink, Product.Food})\n"
-							+ "SET [AxisCOLUMNS] AS\n"
-							+ "    CrossJoin(TopCount({{[Product].[Consumable]}, Except({[Product].[Product Family].Members}, {[Product].[Non-Consumable]})}, 2, Measures.[Unit Sales]), {[Education Level].[Education Level].Members})\n"
-							+ "SET [AxisROWS] AS\n"
-							+ "    {[Gender].[F]}\n"
-							+ "SELECT\n"
-							+ "[AxisCOLUMNS] ON COLUMNS,\n"
-							+ "[AxisROWS] ON ROWS\n"
-							+ "FROM [Sales]";
+	                "WITH\n"
+	                        + "MEMBER [Product].[Consumable] AS\n"
+	                        + "    Aggregate({Product.Drink, Product.Food})\n"
+	                        + "SET [~COLUMNS_Product] AS\n"
+	                        + "    TopCount({{[Product].[Consumable]}, Except({[Product].[Product Family].Members}, {[Product].[Non-Consumable]})}, 2, Measures.[Unit Sales])\n"
+	                        + "SET [~COLUMNS_Education Level] AS\n"
+	                        + "    {[Education Level].[Education Level].Members}\n"
+	                        + "SET [~COLUMNS] AS\n"
+	                        + "    CrossJoin([~COLUMNS_Product], [~COLUMNS_Education Level])\n"
+	                        + "SET [~ROWS] AS\n"
+	                        + "    {[Gender].[F]}\n"
+	                        + "SELECT\n"
+	                        + "[~COLUMNS] ON COLUMNS,\n"
+	                        + "[~ROWS] ON ROWS\n"
+	                        + "FROM [Sales]";
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
 			CellSet results = query.execute();
@@ -245,13 +371,13 @@ public class QueryTest extends TestCase {
 					"WITH\n"
 							+ "MEMBER [Product].[Drink].[BeverageDairy] AS\n"
 							+ "    Aggregate({[Product].[Drink].[Beverages], [Product].[Drink].[Dairy]})\n"
-							+ "SET [AxisCOLUMNS] AS\n"
+							+ "SET [~COLUMNS] AS\n"
 							+ "    {[Product].[Drink].[BeverageDairy]}\n"
-							+ "SET [AxisROWS] AS\n"
+							+ "SET [~ROWS] AS\n"
 							+ "    {[Gender].[F]}\n"
 							+ "SELECT\n"
-							+ "[AxisCOLUMNS] ON COLUMNS,\n"
-							+ "[AxisROWS] ON ROWS\n"
+							+ "[~COLUMNS] ON COLUMNS,\n"
+							+ "[~ROWS] ON ROWS\n"
 							+ "FROM [Sales]";
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
@@ -309,11 +435,11 @@ public class QueryTest extends TestCase {
 	                "WITH\n"
 	                        + "MEMBER [Measures].[Double Profit] AS\n"
 	                        + "    (([Measures].[Store Sales] - [Measures].[Store Cost]) * 2)\n"
-	                        + "SET [AxisROWS] AS\n"
+	                        + "SET [~ROWS] AS\n"
 	                        + "    {[Product].[Drink]}\n"
 	                        + "SELECT\n"
 	                        + "{[Measures].[Double Profit], [Measures].[Unit Sales]} ON COLUMNS,\n"
-	                        + "[AxisROWS] ON ROWS\n"
+	                        + "[~ROWS] ON ROWS\n"
 	                        + "FROM [Sales]";
 	                        
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
@@ -340,15 +466,15 @@ public class QueryTest extends TestCase {
 			mdxString = mdx.toString();
 			expectedQuery = 
 		            "WITH\n"
-		                    + "SET [AxisCOLUMNS] AS\n"
+		                    + "SET [~COLUMNS] AS\n"
 		                    + "    {[Gender].[Gender].Members}\n"
 		                    + "MEMBER [Measures].[Double Profit] AS\n"
 		                    + "    (([Measures].[Store Sales] - [Measures].[Store Cost]) * 2)\n"
-		                    + "SET [AxisROWS] AS\n"
+		                    + "SET [~ROWS] AS\n"
 		                    + "    {[Product].[Drink]}\n"
 		                    + "SELECT\n"
-		                    + "CrossJoin([AxisCOLUMNS], {[Measures].[Double Profit], [Measures].[Unit Sales]}) ON COLUMNS,\n"
-		                    + "[AxisROWS] ON ROWS\n"
+		                    + "CrossJoin([~COLUMNS], {[Measures].[Double Profit], [Measures].[Unit Sales]}) ON COLUMNS,\n"
+		                    + "[~ROWS] ON ROWS\n"
 		                    + "FROM [Sales]";
 	                        
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
@@ -358,15 +484,15 @@ public class QueryTest extends TestCase {
 			mdxString = mdx.toString();
 			expectedQuery = 
 		            "WITH\n"
-		                    + "SET [AxisCOLUMNS] AS\n"
+		                    + "SET [~COLUMNS] AS\n"
 		                    + "    {[Gender].[Gender].Members}\n"
 		                    + "MEMBER [Measures].[Double Profit] AS\n"
 		                    + "    (([Measures].[Store Sales] - [Measures].[Store Cost]) * 2)\n"
-		                    + "SET [AxisROWS] AS\n"
+		                    + "SET [~ROWS] AS\n"
 		                    + "    {[Product].[Drink]}\n"
 		                    + "SELECT\n"
-		                    + "CrossJoin({[Measures].[Double Profit], [Measures].[Unit Sales]}, [AxisCOLUMNS]) ON COLUMNS,\n"
-		                    + "[AxisROWS] ON ROWS\n"
+		                    + "CrossJoin({[Measures].[Double Profit], [Measures].[Unit Sales]}, [~COLUMNS]) ON COLUMNS,\n"
+		                    + "[~ROWS] ON ROWS\n"
 		                    + "FROM [Sales]";
 	                        
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
@@ -407,13 +533,13 @@ public class QueryTest extends TestCase {
 			}
 			String expectedQuery = 
 					"WITH\n"
-			                + "SET [AxisCOLUMNS] AS\n"
+			                + "SET [~COLUMNS] AS\n"
 			                + "    {[Product].[Drink]}\n"
-			                + "SET [AxisROWS] AS\n"
+			                + "SET [~ROWS] AS\n"
 			                + "    Filter({[Time].[Quarter].Members}, (([Time].CurrentMember.Name  =  \"Q1\")  OR  ([Time].CurrentMember.Name  =  \"Q2\")))\n"
 			                + "SELECT\n"
-			                + "[AxisCOLUMNS] ON COLUMNS,\n"
-			                + "[AxisROWS] ON ROWS\n"
+			                + "[~COLUMNS] ON COLUMNS,\n"
+			                + "[~ROWS] ON ROWS\n"
 			                + "FROM [Sales]";
 	                        
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
@@ -474,13 +600,13 @@ public class QueryTest extends TestCase {
 			}
 			String expectedQuery = 
 					"WITH\n"
-			                + "SET [AxisCOLUMNS] AS\n"
+			                + "SET [~COLUMNS] AS\n"
 			                + "    {[Product].[Drink]}\n"
-			                + "SET [AxisROWS] AS\n"
+			                + "SET [~ROWS] AS\n"
 			                + "    Filter(Hierarchize({{[Time].[Quarter].Members}, {[Time].[Month].Members}}), ((Instr([Time].CurrentMember.Name, \"Q\")  >  0)  OR  (Instr([Time].CurrentMember.Name, \"2\")  >  0)))\n"
 			                + "SELECT\n"
-			                + "[AxisCOLUMNS] ON COLUMNS,\n"
-			                + "NON EMPTY [AxisROWS] ON ROWS\n"
+			                + "[~COLUMNS] ON COLUMNS,\n"
+			                + "NON EMPTY [~ROWS] ON ROWS\n"
 			                + "FROM [Sales]";
 	                        
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
@@ -520,13 +646,17 @@ public class QueryTest extends TestCase {
 			}
 			expectedQuery = 
 					"WITH\n"
-			                + "SET [AxisCOLUMNS] AS\n"
+			                + "SET [~COLUMNS] AS\n"
 			                + "    {[Product].[Drink]}\n"
-			                + "SET [AxisROWS] AS\n"
-			                + "    Hierarchize(Exists({Filter({[Time].[Quarter].Members}, (Instr([Time].CurrentMember.Name, \"Q\")  >  0)), Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0))}, Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0))))\n"
+			                + "SET [~Time_Quarter] AS\n"
+			                + "    Filter({[Time].[Quarter].Members}, (Instr([Time].CurrentMember.Name, \"Q\")  >  0))\n"
+			                + "SET [~Time_Month] AS\n"
+			                + "    Exists(Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0)), [~Time_Quarter])\n"
+			                + "SET [~ROWS] AS\n"
+			                + "    Hierarchize({[~Time_Quarter], [~Time_Month]})\n"
 			                + "SELECT\n"
-			                + "[AxisCOLUMNS] ON COLUMNS,\n"
-			                + "NON EMPTY [AxisROWS] ON ROWS\n"
+			                + "[~COLUMNS] ON COLUMNS,\n"
+			                + "NON EMPTY [~ROWS] ON ROWS\n"
 			                + "FROM [Sales]";
 	                        
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
@@ -541,12 +671,16 @@ public class QueryTest extends TestCase {
 			                + "Axis #2:\n"
 			                + "{[Time].[1997].[Q1]}\n"
 			                + "{[Time].[1997].[Q1].[2]}\n"
+			                + "{[Time].[1997].[Q2]}\n"
+			                + "{[Time].[1997].[Q3]}\n"
 			                + "{[Time].[1997].[Q4]}\n"
 			                + "{[Time].[1997].[Q4].[12]}\n"
 			                + "Row #0: 5,976\n"
 			                + "Row #1: 1,951\n"
-			                + "Row #2: 6,661\n"
-			                + "Row #3: 2,419\n",
+			                + "Row #2: 5,895\n"
+			                + "Row #3: 6,065\n"
+			                + "Row #4: 6,661\n"
+			                + "Row #5: 2,419\n",
 							s);
 
 			
@@ -582,15 +716,22 @@ public class QueryTest extends TestCase {
 			
 			SelectNode mdx = query.getSelect();
 			String mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestUtil.toJavaString(mdxString));
+			}
 			String expectedQuery = 
 					"WITH\n"
-			                + "SET [AxisCOLUMNS] AS\n"
+			                + "SET [~COLUMNS] AS\n"
 			                + "    {[Product].[Drink]}\n"
-			                + "SET [AxisROWS] AS\n"
-			                + "    VisualTotals(Hierarchize(Exists({Filter({[Time].[Quarter].Members}, (Instr([Time].CurrentMember.Name, \"Q\")  >  0)), Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0))}, Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0)))))\n"
+			                + "SET [~Time_Quarter] AS\n"
+			                + "    Filter({[Time].[Quarter].Members}, (Instr([Time].CurrentMember.Name, \"Q\")  >  0))\n"
+			                + "SET [~Time_Month] AS\n"
+			                + "    Exists(Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0)), [~Time_Quarter])\n"
+			                + "SET [~ROWS] AS\n"
+			                + "    VisualTotals(Hierarchize({[~Time_Quarter], [~Time_Month]}))\n"
 			                + "SELECT\n"
-			                + "[AxisCOLUMNS] ON COLUMNS,\n"
-			                + "NON EMPTY [AxisROWS] ON ROWS\n"
+			                + "[~COLUMNS] ON COLUMNS,\n"
+			                + "NON EMPTY [~ROWS] ON ROWS\n"
 			                + "FROM [Sales]";
 	                        
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
@@ -605,12 +746,16 @@ public class QueryTest extends TestCase {
 			                + "Axis #2:\n"
 			                + "{[Time].[1997].[Q1]}\n"
 			                + "{[Time].[1997].[Q1].[2]}\n"
+			                + "{[Time].[1997].[Q2]}\n"
+			                + "{[Time].[1997].[Q3]}\n"
 			                + "{[Time].[1997].[Q4]}\n"
 			                + "{[Time].[1997].[Q4].[12]}\n"
 			                + "Row #0: 1,951\n"
 			                + "Row #1: 1,951\n"
-			                + "Row #2: 2,419\n"
-			                + "Row #3: 2,419\n",
+			                + "Row #2: 5,895\n"
+			                + "Row #3: 6,065\n"
+			                + "Row #4: 2,419\n"
+			                + "Row #5: 2,419\n",
 							s);
 
 			
@@ -618,16 +763,23 @@ public class QueryTest extends TestCase {
 			time.setVisualTotalsPattern("Total - *");
 			mdx = query.getSelect();
 			mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestUtil.toJavaString(mdxString));
+			}
 			expectedQuery = 
 					"WITH\n"
-			                + "SET [AxisCOLUMNS] AS\n"
-			                + "    {[Product].[Drink]}\n"
-			                + "SET [AxisROWS] AS\n"
-			                + "    VisualTotals(Hierarchize(Exists({Filter({[Time].[Quarter].Members}, (Instr([Time].CurrentMember.Name, \"Q\")  >  0)), Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0))}, Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0)))), \"Total - *\")\n"
-			                + "SELECT\n"
-			                + "[AxisCOLUMNS] ON COLUMNS,\n"
-			                + "NON EMPTY [AxisROWS] ON ROWS\n"
-			                + "FROM [Sales]";
+				                + "SET [~COLUMNS] AS\n"
+				                + "    {[Product].[Drink]}\n"
+				                + "SET [~Time_Quarter] AS\n"
+				                + "    Filter({[Time].[Quarter].Members}, (Instr([Time].CurrentMember.Name, \"Q\")  >  0))\n"
+				                + "SET [~Time_Month] AS\n"
+				                + "    Exists(Filter({[Time].[Month].Members}, (Instr([Time].CurrentMember.Name, \"2\")  >  0)), [~Time_Quarter])\n"
+				                + "SET [~ROWS] AS\n"
+				                + "    VisualTotals(Hierarchize({[~Time_Quarter], [~Time_Month]}), \"Total - *\")\n"
+				                + "SELECT\n"
+				                + "[~COLUMNS] ON COLUMNS,\n"
+				                + "NON EMPTY [~ROWS] ON ROWS\n"
+				                + "FROM [Sales]";
 	                        
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
@@ -641,15 +793,119 @@ public class QueryTest extends TestCase {
 			                + "Axis #2:\n"
 			                + "{[Time].[1997].[Total - Q1]}\n"
 			                + "{[Time].[1997].[Q1].[2]}\n"
+			                + "{[Time].[1997].[Q2]}\n"
+			                + "{[Time].[1997].[Q3]}\n"
 			                + "{[Time].[1997].[Total - Q4]}\n"
 			                + "{[Time].[1997].[Q4].[12]}\n"
 			                + "Row #0: 1,951\n"
 			                + "Row #1: 1,951\n"
-			                + "Row #2: 2,419\n"
-			                + "Row #3: 2,419\n",
+			                + "Row #2: 5,895\n"
+			                + "Row #3: 6,065\n"
+			                + "Row #4: 2,419\n"
+			                + "Row #5: 2,419\n",
 							s);
 
 			
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
+	public void testRange() {
+
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query", cube);
+			QueryAxis rows = query.getAxis(Axis.ROWS);
+			QueryAxis columns = query.getAxis(Axis.COLUMNS);
+			
+			QueryHierarchy time = query.getHierarchy("Time");
+			Level years = time.getHierarchy().getLevels().get(0);
+			Member start = years.getMembers().get(0);
+			Member end = years.getMembers().get(1);			
+			time.includeRange(start, end);
+			
+			rows.addHierarchy(time);
+			
+			QueryHierarchy products = query.getHierarchy("Product");
+			products.includeMember("[Product].[Drink]");
+			columns.addHierarchy(products);
+			
+			SelectNode mdx = query.getSelect();
+			String mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestUtil.toJavaString(mdxString));
+			}
+			String expectedQuery = 
+					"WITH\n"
+			                + "SET [~COLUMNS] AS\n"
+			                + "    {[Product].[Drink]}\n"
+			                + "SET [~ROWS] AS\n"
+			                + "    ([Time].[1997] : [Time].[1998])\n"
+			                + "SELECT\n"
+			                + "[~COLUMNS] ON COLUMNS,\n"
+			                + "[~ROWS] ON ROWS\n"
+			                + "FROM [Sales]";
+	                        
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+
+			CellSet results = query.execute();
+			String s = TestUtil.toString(results);
+
+			TestUtil.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Product].[Drink]}\n"
+			                + "Axis #2:\n"
+			                + "{[Time].[1997]}\n"
+			                + "{[Time].[1998]}\n"
+			                + "Row #0: 24,597\n"
+			                + "Row #1: \n",
+							s);
+
+			time.includeMember("[Time].[1997].[Q1]");
+			mdx = query.getSelect();
+			mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestUtil.toJavaString(mdxString));
+			}
+			
+			expectedQuery =
+					"WITH\n"
+			                + "SET [~COLUMNS] AS\n"
+			                + "    {[Product].[Drink]}\n"
+			                + "SET [~Time_Year] AS\n"
+			                + "    ([Time].[1997] : [Time].[1998])\n"
+			                + "SET [~Time_Quarter] AS\n"
+			                + "    Exists({[Time].[1997].[Q1]}, [~Time_Year])\n"
+			                + "SET [~ROWS] AS\n"
+			                + "    Hierarchize({[~Time_Year], [~Time_Quarter]})\n"
+			                + "SELECT\n"
+			                + "[~COLUMNS] ON COLUMNS,\n"
+			                + "[~ROWS] ON ROWS\n"
+			                + "FROM [Sales]";
+			
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+			
+			results = query.execute();
+			s = TestUtil.toString(results);
+
+			TestUtil.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Product].[Drink]}\n"
+			                + "Axis #2:\n"
+			                + "{[Time].[1997]}\n"
+			                + "{[Time].[1997].[Q1]}\n"
+			                + "{[Time].[1998]}\n"
+			                + "Row #0: 24,597\n"
+			                + "Row #1: 5,976\n"
+			                + "Row #2: \n",
+							s);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail();
