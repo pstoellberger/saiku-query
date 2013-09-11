@@ -15,7 +15,6 @@ public class QueryLevel extends AbstractQuerySet implements Named {
 	private List<Member> exclusions = new ArrayList<Member>();
 	private Member rangeStart = null;
 	private Member rangeEnd = null;
-	private boolean range = false;
 
     public QueryLevel(QueryHierarchy hierarchy, Level level) {
         super();

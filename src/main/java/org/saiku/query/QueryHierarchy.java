@@ -2,7 +2,6 @@ package org.saiku.query;
 
 import java.util.List;
 
-import org.olap4j.Axis;
 import org.olap4j.OlapException;
 import org.olap4j.impl.IdentifierParser;
 import org.olap4j.impl.Named;
@@ -233,6 +232,27 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     	}
     	ql.include(m);
     }
+    
+    public void includeRange(String uniqueMemberNameStart, String uniqueMemberNameEnd) throws OlapException {
+    	List<IdentifierSegment> namePartsStart = IdentifierParser.parseIdentifier(uniqueMemberNameStart);
+    	List<IdentifierSegment> namePartsEnd = IdentifierParser.parseIdentifier(uniqueMemberNameEnd);
+    	this.includeRange(namePartsStart, namePartsEnd);
+    }
+    
+    public void includeRange(List<IdentifierSegment> namePartsStart, List<IdentifierSegment> namePartsEnd) throws OlapException {
+        Member rangeStart = this.query.getCube().lookupMember(namePartsStart);
+        Member rangeEnd = this.query.getCube().lookupMember(namePartsEnd);
+        if (rangeStart == null) {
+            throw new OlapException(
+                "Unable to find a member with name " + rangeStart);
+        }
+        if (rangeEnd == null) {
+            throw new OlapException(
+                "Unable to find a member with name " + rangeEnd);
+        }
+        this.includeRange(rangeStart, rangeEnd);
+    }
+
     
     public void includeRange(Member start, Member end) throws OlapException {
     	Level l = start.getLevel();
