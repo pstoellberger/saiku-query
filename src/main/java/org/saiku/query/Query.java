@@ -1,5 +1,8 @@
 package org.saiku.query;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +15,7 @@ import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
 import org.olap4j.OlapStatement;
 import org.olap4j.impl.NamedListImpl;
+import org.olap4j.mdx.ParseTreeWriter;
 import org.olap4j.mdx.SelectNode;
 import org.olap4j.metadata.Catalog;
 import org.olap4j.metadata.Cube;
@@ -92,6 +96,12 @@ public class Query {
      */
     public SelectNode getSelect() {
         return Olap4jNodeConverter.toQuery(this);
+    }
+    
+    public String getMdx() {
+    	final Writer writer = new StringWriter();
+    	this.getSelect().unparse(new ParseTreeWriter(new PrintWriter(writer)));
+    	return writer.toString();
     }
 
     /**
