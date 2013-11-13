@@ -23,11 +23,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.olap4j.Axis;
+import org.olap4j.OlapException;
+import org.olap4j.impl.IdentifierParser;
 import org.olap4j.mdx.AxisNode;
 import org.olap4j.mdx.CallNode;
 import org.olap4j.mdx.CubeNode;
 import org.olap4j.mdx.IdentifierNode;
+import org.olap4j.mdx.IdentifierSegment;
 import org.olap4j.mdx.LevelNode;
 import org.olap4j.mdx.LiteralNode;
 import org.olap4j.mdx.MemberNode;
@@ -38,8 +42,10 @@ import org.olap4j.mdx.WithMemberNode;
 import org.olap4j.mdx.WithSetNode;
 import org.olap4j.mdx.parser.MdxParser;
 import org.olap4j.mdx.parser.impl.DefaultMdxParserImpl;
+import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
+import org.saiku.query.Parameter.SelectionType;
 import org.saiku.query.mdx.IFilterFunction;
 import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
@@ -260,6 +266,26 @@ public class Olap4jNodeConverter extends NodeConverter {
 		inclusions.addAll(level.getInclusions());
 		exclusions.addAll(level.getExclusions());
 		
+		if (level.hasParameter()) {
+			String parameterName = level.getParameterName();
+			String parameterValue = level.getQueryHierarchy().getQuery().getParameter(parameterName);
+			if (StringUtils.isNotBlank(parameterValue)) {
+				List<Member> resolvedParameters = resolveParameter(level.getQueryHierarchy().getQuery().getCube(), parameterValue);
+				switch(level.getParameterSelectionType()) {
+					case EXCLUSION:
+						exclusions.clear();
+						exclusions.addAll(resolvedParameters);
+					break;
+					case INCLUSION:
+						inclusions.clear();
+						inclusions.addAll(resolvedParameters);
+					break;
+				default:
+					break;
+				}
+			}
+		}
+		
 		ParseTreeNode baseNode = new CallNode(null, "Members", Syntax.Property, new LevelNode(null, level.getLevel()));
 		// TODO shall we really wrap all <Level>.Members into {} ?
 		baseNode = generateSetCall(baseNode);
@@ -281,7 +307,26 @@ public class Olap4jNodeConverter extends NodeConverter {
 		
 		return baseNode;
 	}
-
+	
+	@Deprecated
+	private static List<Member> resolveParameter(Cube cube, String value) {
+		try {
+			List<Member> resolvedList = new ArrayList<Member>();
+			if (StringUtils.isNotBlank(value)) {
+				String[] vs = value.split(",");
+				for (String v : vs) {
+					v = v.trim();
+					List<IdentifierSegment> nameParts = IdentifierParser.parseIdentifier(v);
+					Member m = cube.lookupMember(nameParts);
+					resolvedList.add(m);
+				}
+			}
+			return resolvedList;
+		} catch (OlapException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	private static ParseTreeNode toQuerySet(ParseTreeNode expression, IQuerySet o) {
 		MdxParser parser = new DefaultMdxParserImpl();
 
@@ -298,6 +343,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 		return expression;
 		
 	}
+	
 	private static ParseTreeNode toSortedQuerySet(ParseTreeNode expression, ISortableQuerySet o) {
 		expression = toQuerySet(expression, o);
 		if (o.getSortOrder() != null) {

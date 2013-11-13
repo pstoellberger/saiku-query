@@ -55,6 +55,7 @@ public class Query {
 	private boolean visualTotals = false;
 	private String visualTotalsPattern;
 	private boolean lowestLevelsOnly = false;
+	private Map<String, String> parameters = new HashMap<String, String>();
 	
     /**
      * Constructs a Query object.
@@ -473,6 +474,31 @@ public class Query {
 	
 	public boolean isLowestLevelsOnly() {
 		return this.lowestLevelsOnly;
+	}
+	
+	/**
+	 * @return the parameters
+	 */
+	public Map<String, String> getParameters() {
+		return parameters;
+	}
+
+	/**
+	 * @param parameters the parameters to set
+	 */
+	public void setParameters(Map<String, String> parameters) {
+		this.parameters  = parameters;
+	}
+	
+	public void setParameter(String name, String value) {
+		this.parameters.put(name, value);
+	}
+
+	public String getParameter(String parameter) {
+		if (parameters.containsKey(parameter)) {
+			return parameters.get(parameter);
+		}
+		return null;
 	}
     
 //  /**

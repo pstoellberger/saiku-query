@@ -3,9 +3,11 @@ package org.saiku.query;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.olap4j.impl.Named;
 import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Member;
+import org.saiku.query.Parameter.SelectionType;
 
 public class QueryLevel extends AbstractQuerySet implements Named {
     private final QueryHierarchy hierarchy;
@@ -15,6 +17,8 @@ public class QueryLevel extends AbstractQuerySet implements Named {
 	private List<Member> exclusions = new ArrayList<Member>();
 	private Member rangeStart = null;
 	private Member rangeEnd = null;
+	private String parameterName = null;
+	private SelectionType parameterSelectionType = Parameter.SelectionType.INCLUSION;
 
     public QueryLevel(QueryHierarchy hierarchy, Level level) {
         super();
@@ -130,6 +134,34 @@ public class QueryLevel extends AbstractQuerySet implements Named {
 	@Override
 	public String toString() {
 		return level.getUniqueName();
+	}
+
+	public void setParameterName(String parameter) {
+		this.parameterName  = parameter;
+		
+	}
+
+	public void setParameterSelectionType(SelectionType selectionType) {
+		this.parameterSelectionType = selectionType;
+		
+	}
+
+	/**
+	 * @return the parameterName
+	 */
+	public String getParameterName() {
+		return parameterName;
+	}
+
+	/**
+	 * @return the parameterSelectionType
+	 */
+	public SelectionType getParameterSelectionType() {
+		return parameterSelectionType;
+	}
+	
+	public boolean hasParameter() {
+		return (StringUtils.isNotBlank(parameterName));
 	}
 }
 
