@@ -193,7 +193,9 @@ public class Olap4jNodeConverter extends NodeConverter {
 					WithSetNode withNode = new WithSetNode(null, getIdentifier(h, l), levelNode);
 					withList.add(withNode);
 					levelNode = withNode.getIdentifier();
-					existSet = levelNode;
+					if (!l.isSimple() || existSet != null) {
+						existSet = levelNode;
+					}
 				}
 				levels.add(levelNode);
 			}

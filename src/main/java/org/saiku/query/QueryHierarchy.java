@@ -1,5 +1,7 @@
 package org.saiku.query;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.olap4j.OlapException;
@@ -135,6 +137,7 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     
     
     public List<QueryLevel> getActiveQueryLevels() {
+    	Collections.sort(activeLevels, new SaikuQueryLevelComparator());
     	return activeLevels;
     }
     
@@ -342,6 +345,18 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
 		return hierarchy.getUniqueName();
 	}
 
+	
+	private class SaikuQueryLevelComparator implements Comparator<QueryLevel> {
+
+		@Override
+		public int compare(QueryLevel o1, QueryLevel o2) {
+			if (o1 != null && o2 != null) {
+				return o1.getLevel().getDepth() - o2.getLevel().getDepth();
+			}
+			return 0;
+		}
+		
+	}
 }
 
 
