@@ -115,19 +115,21 @@ public class Olap4jNodeConverter extends NodeConverter {
 					withList.add(withNode);		
 					hierarchies.add(withNode.getIdentifier());
 				}
-				axisExpression = generateCrossJoin(hierarchies, axis.isNonEmpty());
+				axisExpression = generateCrossJoin(hierarchies, axis.isNonEmpty(), true);
 			} else {
 				// TODO do we need to handle hierarchy count == 0 ?
 			}
 
 		}
 		axisExpression = toSortedQuerySet(axisExpression, axis);
-		ParseTreeNode axisNode = null;
-		if (axisExpression != null) {
-			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
-			withList.add(withNode);
-			axisNode = withNode.getIdentifier();
-		}
+//		TODO - it seems like its better to have the crossjoin as close to the NON EMPTY axis etc. as possible in mondrian 3 - works ok in mondrian 4
+//		ParseTreeNode axisNode = null;
+//		if (axisExpression != null) {
+//			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
+//			withList.add(withNode);
+//			axisNode = withNode.getIdentifier();
+//		}
+		ParseTreeNode axisNode = axisExpression;
 		QueryDetails details = axis.getQuery().getDetails();
 		
 		if (details.getMeasures().size() > 0 && axis.getLocation().equals(details.getAxis())) {

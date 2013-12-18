@@ -48,27 +48,38 @@ public class NodeConverter {
 	}
 
 	protected static CallNode generateCrossJoin(List<ParseTreeNode> selections) {
-		return generateCrossJoin(selections, false);
+		return generateCrossJoin(selections, false, true);
 	}
 
-	protected static CallNode generateCrossJoin(List<ParseTreeNode> selections, boolean nonEmpty)
+	protected static CallNode generateCrossJoin(List<ParseTreeNode> selections, boolean nonEmpty, boolean asterisk)
 	{
 		String crossJoinFun = nonEmpty ? "NonEmptyCrossJoin" : "CrossJoin";
-		ParseTreeNode sel1 = selections.remove(0);
+		if (selections == null || selections.size() == 0)
+			return null;
+		
+		ParseTreeNode sel1 = selections.get(0);
 		if (sel1 instanceof MemberNode) {
 			sel1 = generateSetCall(sel1);
 		}
-		if (selections.size() == 1) {
-			ParseTreeNode sel2 = selections.get(0);
+		if (selections.size() == 2) {
+			ParseTreeNode sel2 = selections.get(1);
 			if (sel2 instanceof MemberNode) {
 				sel2 = generateSetCall(sel2);
 			}
 			return new CallNode(
 					null, crossJoinFun, Syntax.Function, sel1, sel2);
 		} else {
-			return new CallNode(
-					null, crossJoinFun, Syntax.Function, sel1,
-					generateCrossJoin(selections, nonEmpty));
+			
+			if (asterisk) {
+				return new CallNode(
+						null, " * ", Syntax.Infix, selections);
+				
+			} else {
+				selections.remove(0);
+				return new CallNode(
+						null, crossJoinFun, Syntax.Function, sel1,
+						generateCrossJoin(selections, nonEmpty, asterisk));
+			}
 		}
 	}
 
