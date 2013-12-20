@@ -45,7 +45,6 @@ import org.olap4j.mdx.parser.impl.DefaultMdxParserImpl;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
-import org.saiku.query.Parameter.SelectionType;
 import org.saiku.query.mdx.IFilterFunction;
 import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
@@ -102,12 +101,14 @@ public class Olap4jNodeConverter extends NodeConverter {
 	private static AxisNode toAxis(List<ParseTreeNode> withList, QueryAxis axis) {
 
 		ParseTreeNode axisExpression = null;
+		boolean axisAsSet = false;
 		if (!axis.isMdxSetExpression()) {
 			List<ParseTreeNode> hierarchies = new ArrayList<ParseTreeNode>();
-
+			
 			int hierarchyCount = axis.getQueryHierarchies().size();
 			if (hierarchyCount == 1) {
 				axisExpression = toHierarchy(withList, axis.getQueryHierarchies().get(0));
+				axisAsSet = true;
 			} else if (hierarchyCount > 1) {
 				for(QueryHierarchy h : axis.getQueryHierarchies()) {
 					ParseTreeNode hierarchyNode = toHierarchy(withList, h);
@@ -123,13 +124,14 @@ public class Olap4jNodeConverter extends NodeConverter {
 		}
 		axisExpression = toSortedQuerySet(axisExpression, axis);
 //		TODO - it seems like its better to have the crossjoin as close to the NON EMPTY axis etc. as possible in mondrian 3 - works ok in mondrian 4
-//		ParseTreeNode axisNode = null;
-//		if (axisExpression != null) {
-//			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
-//			withList.add(withNode);
-//			axisNode = withNode.getIdentifier();
-//		}
-		ParseTreeNode axisNode = axisExpression;
+		ParseTreeNode axisNode = null;
+		if (axisExpression != null && axisAsSet) {
+			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
+			withList.add(withNode);
+			axisNode = withNode.getIdentifier();
+		} else {
+			axisNode = axisExpression;
+		}
 		QueryDetails details = axis.getQuery().getDetails();
 		
 		if (details.getMeasures().size() > 0 && axis.getLocation().equals(details.getAxis())) {
