@@ -976,6 +976,43 @@ public class QueryTest extends TestCase {
 		}
 	}
 	
+	public void testAllLevel() {
+		try {
+		Cube cube = getFoodmartCube("Sales");
+		Query query = new Query("all Level", cube);
+		QueryAxis rows = query.getAxis(Axis.ROWS);
+		
+		QueryHierarchy store = query.getHierarchy("Store");
+		Level allStores = store.getHierarchy().getLevels().get(0);
+		store.includeLevel(allStores);
+		rows.addHierarchy(store);
+		
+		QueryHierarchy products = query.getHierarchy("Product");
+		products.includeLevel("(All)");
+		rows.addHierarchy(products);
+		
+		SelectNode mdx = query.getSelect();
+		String mdxString = mdx.toString();
+		if (TestContext.DEBUG) {
+			System.out.println(TestUtil.toJavaString(mdxString));
+		}
+		String expectedQuery = 
+				"WITH\n"
+		                + "SET [~ROWS_Store] AS\n"
+		                + "    {[Store].[All Stores]}\n"
+		                + "SET [~ROWS_Product] AS\n"
+		                + "    {[Product].[All Products]}\n"
+		                + "SELECT\n"
+		                + "CrossJoin([~ROWS_Store], [~ROWS_Product]) ON ROWS\n"
+		                + "FROM [Sales]";
+                        
+		TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
     
 	public Cube getFoodmartCube(String cubeName) throws Exception {
 		OlapConnection connection = context.createConnection();
