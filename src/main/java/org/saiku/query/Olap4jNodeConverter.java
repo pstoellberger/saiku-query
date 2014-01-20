@@ -43,6 +43,7 @@ import org.olap4j.mdx.WithSetNode;
 import org.olap4j.mdx.parser.MdxParser;
 import org.olap4j.mdx.parser.impl.DefaultMdxParserImpl;
 import org.olap4j.metadata.Cube;
+import org.olap4j.metadata.Level.Type;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.saiku.query.mdx.IFilterFunction;
@@ -293,6 +294,14 @@ public class Olap4jNodeConverter extends NodeConverter {
 		}
 		
 		ParseTreeNode baseNode = new CallNode(null, "Members", Syntax.Property, new LevelNode(null, level.getLevel()));
+		if (level.getLevel().getLevelType().equals(Type.ALL)) {
+			try {
+				baseNode = new MemberNode(null, level.getLevel().getHierarchy().getDefaultMember());
+			} catch (OlapException e) {
+				throw new RuntimeException("Cannot include hierarchy default member for " + level.getUniqueName());
+			}
+		}
+
 		// TODO shall we really wrap all <Level>.Members into {} ?
 		baseNode = generateSetCall(baseNode);
 		
