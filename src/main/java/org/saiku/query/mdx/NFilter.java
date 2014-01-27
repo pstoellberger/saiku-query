@@ -36,8 +36,10 @@ public class NFilter extends AbstractFilterFunction {
 		List<ParseTreeNode> arguments = new ArrayList<ParseTreeNode>();
 		ParseTreeNode nfilter =  LiteralNode.createNumeric(null, new BigDecimal(n), false);
 		arguments.add(nfilter);
-		ParseTreeNode topn =  parser.parseExpression(filterExpression);
-		arguments.add(topn);
+		if (filterExpression != null) {
+			ParseTreeNode topn =  parser.parseExpression(filterExpression);
+			arguments.add(topn);
+		}
 		
 		return arguments;
 	}
