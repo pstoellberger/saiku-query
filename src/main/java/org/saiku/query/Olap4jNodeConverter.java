@@ -349,7 +349,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 			expression =  parser.parseExpression("{" + o.getMdxSetExpression() + "}");
 		}
 
-		if (o.getFilters().size() > 0) {
+		if (expression != null && o.getFilters().size() > 0) {
 			for (IFilterFunction filter : o.getFilters()) {
 				expression = filter.visit(parser, expression);
 			}
@@ -361,6 +361,9 @@ public class Olap4jNodeConverter extends NodeConverter {
 	
 	private static ParseTreeNode toSortedQuerySet(ParseTreeNode expression, ISortableQuerySet o) {
 		expression = toQuerySet(expression, o);
+		if (expression == null) {
+			return null;
+		}
 		if (o.getSortOrder() != null) {
 			LiteralNode evaluatorNode =
 					LiteralNode.createSymbol(
