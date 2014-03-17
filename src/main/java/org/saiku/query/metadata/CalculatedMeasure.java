@@ -47,7 +47,7 @@ public class CalculatedMeasure implements Measure, Named, Calculated {
 		this.formula = formula;
 		this.uniqueName = IdentifierNode.ofNames(hierarchy.getName(), name).toString();
 		if (properties != null) {
-			properties.putAll(properties);
+			this.properties.putAll(properties);
 		}
 	}
 	

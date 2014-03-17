@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import org.apache.commons.lang.StringUtils;
 import org.olap4j.mdx.CallNode;
 import org.olap4j.mdx.IdentifierNode;
+import org.olap4j.mdx.LiteralNode;
 import org.olap4j.mdx.MemberNode;
 import org.olap4j.mdx.ParseTreeNode;
 import org.olap4j.mdx.PropertyValueNode;
@@ -129,7 +130,7 @@ public class NodeConverter {
 		ParseTreeNode formula = parser.parseExpression(cm.getFormula());
 		List<PropertyValueNode> propertyList = new ArrayList<PropertyValueNode>();
 		for (Entry<String, String> entry : cm.getFormatProperties().entrySet()) {
-			ParseTreeNode exp = parser.parseExpression(entry.getValue());
+			ParseTreeNode exp = LiteralNode.createString(null,  entry.getValue());
 			String name = entry.getKey();
 			PropertyValueNode prop = new PropertyValueNode(null, name, exp);
 			propertyList.add(prop);
