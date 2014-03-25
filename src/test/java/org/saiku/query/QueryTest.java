@@ -36,7 +36,7 @@ public class QueryTest extends TestCase {
 			Query query = new Query("my query", cube);
 			QueryAxis qa = query.getAxis(Axis.COLUMNS);
 			
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 
 			products.includeLevel("Product Family");
 			products.includeLevel("Product Category");
@@ -57,7 +57,7 @@ public class QueryTest extends TestCase {
 							+ "FROM [Sales]";
 			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
 
-			QueryHierarchy time = query.getHierarchy("Time.Weekly");
+			QueryHierarchy time = query.getHierarchy("[Time.Weekly]");
 			time.includeLevel("Week");
 			qa.addHierarchy(time);
 			
@@ -129,7 +129,7 @@ public class QueryTest extends TestCase {
 			Cube cube = getFoodmartCube("Sales");
 			Query query = new Query("my query", cube);
 			QueryAxis qa = query.getAxis(Axis.COLUMNS);
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 
 			products.includeLevel("Product Family");
 			products.excludeMember("[Product].[Food]");
@@ -185,7 +185,7 @@ public class QueryTest extends TestCase {
 			Cube cube = getFoodmartCube("Sales");
 			Query query = new Query("my query", cube);
 			QueryAxis qa = query.getAxis(Axis.COLUMNS);
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 
 			products.includeLevel("Product Family");
 			products.excludeMember("[Product].[Drink]");
@@ -247,7 +247,7 @@ public class QueryTest extends TestCase {
 			
 			QueryAxis columns = query.getAxis(Axis.COLUMNS);
 			QueryAxis filter = query.getAxis(Axis.FILTER);
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 
 			products.includeLevel("Product Family");
 			products.excludeMember("[Product].[Drink]");
@@ -256,7 +256,7 @@ public class QueryTest extends TestCase {
 			products.includeLevel("Product Category");
 			columns.addHierarchy(products);
 			
-			QueryHierarchy time = query.getHierarchy("Time");
+			QueryHierarchy time = query.getHierarchy("[Time]");
 
 			time.includeMember("[Time].[1997].[Q1]");
 			time.includeLevel("Month");
@@ -318,7 +318,7 @@ public class QueryTest extends TestCase {
 			Query query = new Query("my query", cube);
 			QueryAxis columns = query.getAxis(Axis.COLUMNS);
 			QueryAxis rows = query.getAxis(Axis.ROWS);
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 			CalculatedMember cm =
 					query.createCalculatedMember(
 							products, 
@@ -333,11 +333,11 @@ public class QueryTest extends TestCase {
 			products.addFilter(top2filter);
 			columns.addHierarchy(products);
 
-			QueryHierarchy edu = query.getHierarchy("Education Level");
+			QueryHierarchy edu = query.getHierarchy("[Education Level]");
 			edu.includeLevel("Education Level");
 			columns.addHierarchy(edu);
 
-			QueryHierarchy gender = query.getHierarchy("Gender");
+			QueryHierarchy gender = query.getHierarchy("[Gender]");
 			gender.includeMember("[Gender].[F]");
 			rows.addHierarchy(gender);
 
@@ -406,7 +406,7 @@ public class QueryTest extends TestCase {
 			Query query = new Query("my query2", cube);
 			QueryAxis columns = query.getAxis(Axis.COLUMNS);
 			QueryAxis rows = query.getAxis(Axis.ROWS);
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 
 			Member parent = 
 					cube.lookupMember(IdentifierParser.parseIdentifier("[Product].[Drink]"));
@@ -422,7 +422,7 @@ public class QueryTest extends TestCase {
 			products.includeCalculatedMember(cm);
 			columns.addHierarchy(products);
 
-			QueryHierarchy gender = query.getHierarchy("Gender");
+			QueryHierarchy gender = query.getHierarchy("[Gender]");
 			gender.includeMember("[Gender].[F]");
 			rows.addHierarchy(gender);
 
@@ -472,7 +472,7 @@ public class QueryTest extends TestCase {
 			Query query = new Query("my query2", cube);
 			QueryAxis rows = query.getAxis(Axis.ROWS);
 			QueryAxis columns = query.getAxis(Axis.COLUMNS);
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 			products.includeMember("[Product].[Drink]");
 			rows.addHierarchy(products);
 
@@ -523,7 +523,7 @@ public class QueryTest extends TestCase {
 							s);
 
 			
-			QueryHierarchy gender = query.getHierarchy("Gender");
+			QueryHierarchy gender = query.getHierarchy("[Gender]");
 			gender.includeLevel("Gender");
 			columns.addHierarchy(gender);
 			mdx = query.getSelect();
@@ -580,13 +580,13 @@ public class QueryTest extends TestCase {
 			Query query = new Query("my query2", cube);
 			QueryAxis rows = query.getAxis(Axis.ROWS);
 			QueryAxis columns = query.getAxis(Axis.COLUMNS);
-			QueryHierarchy time = query.getHierarchy("Time");
+			QueryHierarchy time = query.getHierarchy("[Time]");
 			time.includeLevel("Quarter");
 			time.addFilter(new NameFilter(time.getHierarchy(), "Q1", "Q2"));
 			
 			rows.addHierarchy(time);
 			
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 			products.includeMember("[Product].[Drink]");
 			columns.addHierarchy(products);
 			
@@ -646,14 +646,14 @@ public class QueryTest extends TestCase {
 			QueryAxis rows = query.getAxis(Axis.ROWS);
 			rows.setNonEmpty(true);
 			QueryAxis columns = query.getAxis(Axis.COLUMNS);
-			QueryHierarchy time = query.getHierarchy("Time");
+			QueryHierarchy time = query.getHierarchy("[Time]");
 			time.includeLevel("Quarter");
 			time.includeLevel("Month");
 			time.addFilter(new NameLikeFilter(time.getHierarchy(), "Q", "2"));
 			
 			rows.addHierarchy(time);
 			
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 			products.includeMember("[Product].[Drink]");
 			columns.addHierarchy(products);
 			
@@ -764,7 +764,7 @@ public class QueryTest extends TestCase {
 			rows.setNonEmpty(true);
 			QueryAxis columns = query.getAxis(Axis.COLUMNS);
 			
-			QueryHierarchy time = query.getHierarchy("Time");
+			QueryHierarchy time = query.getHierarchy("[Time]");
 			QueryLevel quarter = time.includeLevel("Quarter");
 			QueryLevel month = time.includeLevel("Month");
 			
@@ -774,7 +774,7 @@ public class QueryTest extends TestCase {
 			time.setVisualTotals(true);
 			rows.addHierarchy(time);
 			
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 			products.includeMember("[Product].[Drink]");
 			columns.addHierarchy(products);
 			
@@ -884,7 +884,7 @@ public class QueryTest extends TestCase {
 			QueryAxis rows = query.getAxis(Axis.ROWS);
 			QueryAxis columns = query.getAxis(Axis.COLUMNS);
 			
-			QueryHierarchy time = query.getHierarchy("Time");
+			QueryHierarchy time = query.getHierarchy("[Time]");
 			Level years = time.getHierarchy().getLevels().get(0);
 			Member start = years.getMembers().get(0);
 			Member end = years.getMembers().get(1);			
@@ -892,7 +892,7 @@ public class QueryTest extends TestCase {
 			
 			rows.addHierarchy(time);
 			
-			QueryHierarchy products = query.getHierarchy("Product");
+			QueryHierarchy products = query.getHierarchy("[Product]");
 			products.includeMember("[Product].[Drink]");
 			columns.addHierarchy(products);
 			
@@ -982,12 +982,12 @@ public class QueryTest extends TestCase {
 		Query query = new Query("all Level", cube);
 		QueryAxis rows = query.getAxis(Axis.ROWS);
 		
-		QueryHierarchy store = query.getHierarchy("Store");
+		QueryHierarchy store = query.getHierarchy("[Store]");
 		Level allStores = store.getHierarchy().getLevels().get(0);
 		store.includeLevel(allStores);
 		rows.addHierarchy(store);
 		
-		QueryHierarchy products = query.getHierarchy("Product");
+		QueryHierarchy products = query.getHierarchy("[Product]");
 		products.includeLevel("(All)");
 		rows.addHierarchy(products);
 		

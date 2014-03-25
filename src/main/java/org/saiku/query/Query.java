@@ -77,7 +77,7 @@ public class Query {
             QueryHierarchy queryHierarchy = new QueryHierarchy(
                 this, hierarchy);
             unused.getQueryHierarchies().add(queryHierarchy);
-            hierarchyMap.put(queryHierarchy.getName(), queryHierarchy);
+            hierarchyMap.put(queryHierarchy.getUniqueName(), queryHierarchy);
         }
         across = new QueryAxis(this, Axis.COLUMNS);
         down = new QueryAxis(this, Axis.ROWS);
@@ -143,7 +143,16 @@ public class Query {
      * name can be found.
      */
     public QueryHierarchy getHierarchy(String name) {
-        return hierarchyMap.get(name);
+        if (hierarchyMap.containsKey(name)) {
+        	return hierarchyMap.get(name);
+        } else {
+        	for (QueryHierarchy qh : hierarchyMap.values()) {
+        		if (qh.getName().equals(name)) {
+        			return qh;
+        		}
+        	}
+        }
+        return null;
     }
 
     /**
@@ -158,7 +167,7 @@ public class Query {
     	if (hierarchy == null) {
     		return null;
     	}
-    	return hierarchyMap.get(hierarchy.getName());
+    	return hierarchyMap.get(hierarchy.getUniqueName());
     }
 
 
