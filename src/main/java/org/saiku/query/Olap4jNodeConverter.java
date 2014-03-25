@@ -46,6 +46,7 @@ import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Level.Type;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
+import org.saiku.query.Query.BackendFlavor;
 import org.saiku.query.mdx.IFilterFunction;
 import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
@@ -55,7 +56,7 @@ import org.saiku.query.metadata.CalculatedMember;
  */
 public class Olap4jNodeConverter extends NodeConverter {
 
-	public static SelectNode toQuery(Query query) {
+	public static SelectNode toQuery(Query query) throws Exception {
 		List<IdentifierNode> cellpropertyList = Collections.emptyList();
 		List<ParseTreeNode> withList = new ArrayList<ParseTreeNode>();
 		List<QueryAxis> axisList = new ArrayList<QueryAxis>();
@@ -80,7 +81,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 						cellpropertyList);
 	}
 
-	private static List<AxisNode> toAxisList(List<ParseTreeNode> withList, List<QueryAxis> axes) {
+	private static List<AxisNode> toAxisList(List<ParseTreeNode> withList, List<QueryAxis> axes) throws Exception {
 		final ArrayList<AxisNode> axisList = new ArrayList<AxisNode>();
 		for (QueryAxis axis : axes) {
 			AxisNode axisNode = toAxis(withList, axis);
@@ -99,10 +100,12 @@ public class Olap4jNodeConverter extends NodeConverter {
 	 * crossjoin.
 	 * It might return null if there are no dimensions placed on the axis.
 	 */
-	private static AxisNode toAxis(List<ParseTreeNode> withList, QueryAxis axis) {
+	private static AxisNode toAxis(List<ParseTreeNode> withList, QueryAxis axis) throws Exception {
 
+		BackendFlavor flavor = axis.getQuery().getFlavor();
 		ParseTreeNode axisExpression = null;
 		boolean axisAsSet = false;
+		boolean isFilter = Axis.FILTER.equals(axis.getLocation());
 		if (!axis.isMdxSetExpression()) {
 			List<ParseTreeNode> hierarchies = new ArrayList<ParseTreeNode>();
 			
@@ -113,9 +116,13 @@ public class Olap4jNodeConverter extends NodeConverter {
 			} else if (hierarchyCount > 1) {
 				for(QueryHierarchy h : axis.getQueryHierarchies()) {
 					ParseTreeNode hierarchyNode = toHierarchy(withList, h);
-					WithSetNode withNode = new WithSetNode(null, getIdentifier(axis, h), hierarchyNode);
-					withList.add(withNode);		
-					hierarchies.add(withNode.getIdentifier());
+					if (!isFilter) {
+						WithSetNode withNode = new WithSetNode(null, getIdentifier(axis, h), hierarchyNode);
+						withList.add(withNode);		
+						hierarchies.add(withNode.getIdentifier());
+					} else {
+						hierarchies.add(hierarchyNode);
+					}
 				}
 				axisExpression = generateCrossJoin(hierarchies, axis.isNonEmpty(), true);
 			} else {
@@ -126,7 +133,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 		axisExpression = toSortedQuerySet(axisExpression, axis);
 //		TODO - it seems like its better to have the crossjoin as close to the NON EMPTY axis etc. as possible in mondrian 3 - works ok in mondrian 4
 		ParseTreeNode axisNode = null;
-		if (axisExpression != null && axisAsSet) {
+		if ((flavor != null && !BackendFlavor.SSAS.equals(flavor)) && axisExpression != null && axisAsSet) {
 			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
 			withList.add(withNode);
 			axisNode = withNode.getIdentifier();
@@ -171,11 +178,11 @@ public class Olap4jNodeConverter extends NodeConverter {
 				axisNode);
 	}
 
-	private static ParseTreeNode toHierarchy(List<ParseTreeNode> withList,
-			QueryHierarchy h) {
+	private static ParseTreeNode toHierarchy(List<ParseTreeNode> withList, QueryHierarchy h) {
 		ParseTreeNode hierarchySet = null;
 
 		if (!h.isMdxSetExpression()) {
+			boolean isFilter = Axis.FILTER.equals(h.getAxis().getLocation());
 			// TODO probably not the best idea
 			if (h.getActiveQueryLevels().size() == 0 && h.getActiveCalculatedMembers().size() == 0) {
 				return new CallNode(null, "{}", Syntax.Braces, new ArrayList<ParseTreeNode>());
@@ -217,9 +224,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 			}
 
 			// hierarchize() on the hierarchy is only needed if we select more than 1 level and on axes != FILTER
-			if ( !Axis.FILTER.equals(h.getAxis().getLocation()) 
-					&& !h.getAxis().isLowestLevelsOnly()
-					&& h.needsHierarchize()) {
+			if ( !isFilter && !h.getAxis().isLowestLevelsOnly() && h.needsHierarchize()) {
 				levelSet = new CallNode(
 						null,
 						"Hierarchize",
@@ -319,6 +324,11 @@ public class Olap4jNodeConverter extends NodeConverter {
 			ParseTreeNode exceptSet = toOlap4jMemberSet(exclusions);
 			baseNode =  new CallNode(null, "Except", Syntax.Function, baseNode, exceptSet);			
 		}
+		
+//		if (Axis.FILTER.equals(level.getQueryHierarchy().getAxis().getLocation())
+//				&& inclusions.size() == 0 && exclusions.size() == 0 && !level.isRange()) {
+//			baseNode = null;
+//		}
 		
 		return baseNode;
 	}

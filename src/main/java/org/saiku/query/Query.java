@@ -94,12 +94,17 @@ public class Query {
      * generated for each call to this function. Altering the returned
      * SelectNode object won't affect the query itself.
      * @return A SelectNode object representing the current query structure.
+     * @throws OlapException 
      */
-    public SelectNode getSelect() {
-        return Olap4jNodeConverter.toQuery(this);
+    public SelectNode getSelect() throws OlapException {
+    	try {
+    		return Olap4jNodeConverter.toQuery(this);
+    	} catch (Exception e) {
+    		throw new OlapException("Error creating Select", e);
+    	}
     }
     
-    public String getMdx() {
+    public String getMdx() throws OlapException {
     	final Writer writer = new StringWriter();
     	this.getSelect().unparse(new ParseTreeWriter(new PrintWriter(writer)));
     	return writer.toString();
@@ -500,6 +505,35 @@ public class Query {
 		}
 		return null;
 	}
+	
+	public static enum BackendFlavor {
+        MONDRIAN("Mondrian"),
+        SSAS("Microsoft"),
+        PALO("Palo"),
+        SAP("SAP"),
+        ESSBASE("Essbase"),
+        UNKNOWN("");
+        
+
+        private final String token;
+
+        private BackendFlavor(String token) {
+            this.token = token;
+        }
+	}
+	
+	public BackendFlavor getFlavor() throws OlapException {
+            final String dataSourceInfo =
+                this.connection.getOlapDatabase().getDataSourceInfo();
+            final String proivder = this.connection.getOlapDatabase().getProviderName();
+            for (BackendFlavor flavor : BackendFlavor.values()) {
+                if (proivder.contains(flavor.token) || dataSourceInfo.contains(flavor.token)) {
+                    return flavor;
+                }
+            }
+            throw new AssertionError("Can't determine the backend vendor. (" + dataSourceInfo + ")");
+     }
+
     
 //  /**
 //  * Validates the current query structure. If a hierarchy axis has
