@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.olap4j.Axis;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
@@ -29,6 +30,7 @@ import org.olap4j.metadata.Property;
 import org.saiku.query.ISortableQuerySet.HierarchizeMode;
 import org.saiku.query.metadata.CalculatedMeasure;
 import org.saiku.query.metadata.CalculatedMember;
+import org.saiku.query.util.QueryUtil;
 
 public class Query {
 
@@ -496,6 +498,27 @@ public class Query {
 	public Map<String, String> getParameters() {
 		return parameters;
 	}
+	
+	public void retrieveParameters() {
+		for (QueryAxis qa : getAxes().values()) {
+			for (QueryHierarchy qh : qa.getQueryHierarchies()) {
+				for (QueryLevel ql : qh.getActiveQueryLevels()) {
+					String pName = ql.getParameterName();
+					if (StringUtils.isNotBlank(pName)) {
+						addOrSetParameter(pName);
+					}
+					
+					List<String> params = QueryUtil.retrieveSetParameters(ql);
+					addOrSetParameters(params);
+					
+				}
+				List<String> hparams = QueryUtil.retrieveSortableSetParameters(qh);
+				addOrSetParameters(hparams);
+			}
+			List<String> qparams = QueryUtil.retrieveSortableSetParameters(qa);
+			addOrSetParameters(qparams);
+		}
+	}
 
 	/**
 	 * @param parameters the parameters to set
@@ -515,6 +538,22 @@ public class Query {
 		return null;
 	}
 	
+	
+	public void addOrSetParameters(List<String> parameters) {
+		if (parameters != null) {
+			for (String param : parameters) {
+				addOrSetParameter(param);
+			}
+		}
+	}
+	public void addOrSetParameter(String parameter) {
+		if (StringUtils.isNotBlank(parameter)) {
+			if (!parameters.containsKey(parameter)) {
+				parameters.put(parameter, null);
+			}
+		}
+	}
+
 	public static enum BackendFlavor {
         MONDRIAN("Mondrian"),
         SSAS("Microsoft"),

@@ -178,7 +178,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 				axisNode);
 	}
 
-	private static ParseTreeNode toHierarchy(List<ParseTreeNode> withList, QueryHierarchy h) {
+	private static ParseTreeNode toHierarchy(List<ParseTreeNode> withList, QueryHierarchy h) throws OlapException {
 		ParseTreeNode hierarchySet = null;
 
 		if (!h.isMdxSetExpression()) {
@@ -272,7 +272,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 		return hierarchySet;
 	}
 
-	private static ParseTreeNode toLevel(QueryLevel level) {
+	private static ParseTreeNode toLevel(QueryLevel level) throws OlapException {
 		List<Member> inclusions = new ArrayList<Member>();
 		List<Member> exclusions = new ArrayList<Member>();
 		inclusions.addAll(level.getInclusions());
@@ -282,7 +282,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 			String parameterName = level.getParameterName();
 			String parameterValue = level.getQueryHierarchy().getQuery().getParameter(parameterName);
 			if (StringUtils.isNotBlank(parameterValue)) {
-				List<Member> resolvedParameters = resolveParameter(level.getQueryHierarchy().getQuery().getCube(), parameterValue);
+				List<Member> resolvedParameters = resolveParameter(level.getQueryHierarchy().getQuery().getCube(), level.getUniqueName(), parameterValue);
 				switch(level.getParameterSelectionType()) {
 					case EXCLUSION:
 						exclusions.clear();
@@ -334,22 +334,32 @@ public class Olap4jNodeConverter extends NodeConverter {
 	}
 	
 	@Deprecated
-	private static List<Member> resolveParameter(Cube cube, String value) {
-		try {
+	private static List<Member> resolveParameter(Cube cube, String parent, String value) throws OlapException {
+			List<IdentifierSegment> parentParts = null;
+			if (StringUtils.isNotBlank(parent)) {
+				parentParts = IdentifierParser.parseIdentifier(parent);
+			}
 			List<Member> resolvedList = new ArrayList<Member>();
 			if (StringUtils.isNotBlank(value)) {
 				String[] vs = value.split(",");
 				for (String v : vs) {
 					v = v.trim();
-					List<IdentifierSegment> nameParts = IdentifierParser.parseIdentifier(v);
-					Member m = cube.lookupMember(nameParts);
-					resolvedList.add(m);
+					if (StringUtils.isNotBlank(v)) {
+						List<IdentifierSegment> nameParts = IdentifierParser.parseIdentifier(v);
+						List<IdentifierSegment> combined = new ArrayList<IdentifierSegment>();
+						if (parentParts != null && nameParts.size() == 1) {
+							combined.addAll(parentParts);
+						}
+						combined.addAll(nameParts);
+						Member m = cube.lookupMember(combined);
+						if (m == null) {
+							throw new OlapException("Cannot find member with name parts: " + combined.toString());
+						}
+						resolvedList.add(m);
+					}
 				}
 			}
 			return resolvedList;
-		} catch (OlapException e) {
-			throw new RuntimeException(e);
-		}
 	}
 	
 	private static ParseTreeNode toQuerySet(ParseTreeNode expression, IQuerySet o) {
