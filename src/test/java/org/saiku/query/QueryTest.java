@@ -1013,7 +1013,177 @@ public class QueryTest extends TestCase {
 			fail();
 		}
 	}
-    
+	
+	public void testMidComplexLevel() {
+		try {
+		Cube cube = getFoodmartCube("Sales");
+		Query query = new Query("mid complex Level", cube);
+		QueryAxis rows = query.getAxis(Axis.ROWS);
+		QueryAxis columns = query.getAxis(Axis.COLUMNS);
+		
+		QueryHierarchy store = query.getHierarchy("[Store]");
+		Level allStores = store.getHierarchy().getLevels().get(0);
+		store.includeLevel(allStores);
+		columns.addHierarchy(store);
+		
+		QueryHierarchy products = query.getHierarchy("[Product]");
+		products.includeLevel("(All)");
+		products.includeLevel("Product Family");
+		products.includeMember("[Product].[Food].[Baking Goods]");
+		products.includeLevel("Product Category");
+		rows.addHierarchy(products);
+		
+		SelectNode mdx = query.getSelect();
+		String mdxString = mdx.toString();
+		if (TestContext.DEBUG) {
+			System.out.println(TestUtil.toJavaString(mdxString));
+		}
+		String expectedQuery = 
+				"WITH\n"
+		                + "SET [~COLUMNS] AS\n"
+		                + "    {[Store].[All Stores]}\n"
+		                + "SET [~Product_(All)] AS\n"
+		                + "    {[Product].[All Products]}\n"
+		                + "SET [~Product_Product Family] AS\n"
+		                + "    Exists({[Product].[Product Family].Members}, [~Product_Product Department])\n"
+		                + "SET [~Product_Product Department] AS\n"
+		                + "    {[Product].[Food].[Baking Goods]}\n"
+		                + "SET [~Product_Product Category] AS\n"
+		                + "    Exists({[Product].[Product Category].Members}, [~Product_Product Department])\n"
+		                + "SET [~ROWS] AS\n"
+		                + "    Hierarchize({[~Product_(All)], [~Product_Product Family], [~Product_Product Department], [~Product_Product Category]})\n"
+		                + "SELECT\n"
+		                + "[~COLUMNS] ON COLUMNS,\n"
+		                + "[~ROWS] ON ROWS\n"
+		                + "FROM [Sales]";
+                        
+		TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+		
+		CellSet results = query.execute();
+		String s = TestUtil.toString(results);
+		TestUtil.assertEqualsVerbose(
+				 "Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Store].[All Stores]}\n"
+			                + "Axis #2:\n"
+			                + "{[Product].[All Products]}\n"
+			                + "{[Product].[Food]}\n"
+			                + "{[Product].[Food].[Baking Goods]}\n"
+			                + "{[Product].[Food].[Baking Goods].[Baking Goods]}\n"
+			                + "{[Product].[Food].[Baking Goods].[Jams and Jellies]}\n"
+			                + "Row #0: 266,773\n"
+			                + "Row #1: 191,940\n"
+			                + "Row #2: 20,245\n"
+			                + "Row #3: 8,357\n"
+			                + "Row #4: 11,888\n",
+						s);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
+	public void testQMParameter() {
+		try {
+		Cube cube = getFoodmartCube("Sales");
+		Query query = new Query("mid complex Level", cube);
+		QueryAxis rows = query.getAxis(Axis.ROWS);
+		QueryAxis columns = query.getAxis(Axis.COLUMNS);
+		
+		QueryHierarchy store = query.getHierarchy("[Store]");
+		Level allStores = store.getHierarchy().getLevels().get(0);
+		store.includeLevel(allStores);
+		columns.addHierarchy(store);
+		
+		QueryHierarchy products = query.getHierarchy("[Product]");
+		products.includeLevel("(All)");
+		QueryLevel family = products.includeLevel("Product Family");
+		family.setParameterName("FamilyParameter");
+		QueryLevel category = products.includeLevel("Product Category");
+		category.setParameterName("CategoryParameter");
+		rows.addHierarchy(products);
+		
+		query.setParameter("FamilyParameter", "Product.Food");
+		
+		SelectNode mdx = query.getSelect();
+		String mdxString = mdx.toString();
+		
+		if (TestContext.DEBUG) {
+			System.out.println(TestUtil.toJavaString(mdxString));
+		}
+		String expectedQuery = 
+				"WITH\n"
+		                + "SET [~COLUMNS] AS\n"
+		                + "    {[Store].[All Stores]}\n"
+		                + "SET [~Product_(All)] AS\n"
+		                + "    {[Product].[All Products]}\n"
+		                + "SET [~Product_Product Family] AS\n"
+		                + "    {[Product].[Food]}\n"
+		                + "SET [~Product_Product Category] AS\n"
+		                + "    Exists({[Product].[Product Category].Members}, [~Product_Product Family])\n"
+		                + "SET [~ROWS] AS\n"
+		                + "    Hierarchize({[~Product_(All)], [~Product_Product Family], [~Product_Product Category]})\n"
+		                + "SELECT\n"
+		                + "[~COLUMNS] ON COLUMNS,\n"
+		                + "[~ROWS] ON ROWS\n"
+		                + "FROM [Sales]";
+                        
+		TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+		
+		query.setParameter("FamilyParameter", "Non-Consumable");
+		
+		
+		String mdxString2 = query.getMdx();
+		String expectedQuery2 = 
+				"WITH\n"
+		                + "SET [~COLUMNS] AS\n"
+		                + "    {[Store].[All Stores]}\n"
+		                + "SET [~Product_(All)] AS\n"
+		                + "    {[Product].[All Products]}\n"
+		                + "SET [~Product_Product Family] AS\n"
+		                + "    {[Product].[Non-Consumable]}\n"
+		                + "SET [~Product_Product Category] AS\n"
+		                + "    Exists({[Product].[Product Category].Members}, [~Product_Product Family])\n"
+		                + "SET [~ROWS] AS\n"
+		                + "    Hierarchize({[~Product_(All)], [~Product_Product Family], [~Product_Product Category]})\n"
+		                + "SELECT\n"
+		                + "[~COLUMNS] ON COLUMNS,\n"
+		                + "[~ROWS] ON ROWS\n"
+		                + "FROM [Sales]";
+                        
+		TestUtil.assertEqualsVerbose(expectedQuery2, mdxString2);
+		
+		query.setParameter("FamilyParameter", null);
+		query.setParameter("CategoryParameter", "Product.Drink.Dairy");
+		
+		String mdxString3 = query.getMdx();
+		String expectedQuery3 = 
+				"WITH\n"
+		                + "SET [~COLUMNS] AS\n"
+		                + "    {[Store].[All Stores]}\n"
+		                + "SET [~Product_(All)] AS\n"
+		                + "    {[Product].[All Products]}\n"
+		                + "SET [~Product_Product Family] AS\n"
+		                + "    Exists({[Product].[Product Family].Members}, [~Product_Product Category])\n"
+		                + "SET [~Product_Product Category] AS\n"
+		                + "    {[Product].[Drink].[Dairy]}\n"
+		                + "SET [~ROWS] AS\n"
+		                + "    Hierarchize({[~Product_(All)], [~Product_Product Family], [~Product_Product Category]})\n"
+		                + "SELECT\n"
+		                + "[~COLUMNS] ON COLUMNS,\n"
+		                + "[~ROWS] ON ROWS\n"
+		                + "FROM [Sales]";
+		TestUtil.assertEqualsVerbose(expectedQuery3, mdxString3);
+		
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+
 	public Cube getFoodmartCube(String cubeName) throws Exception {
 		OlapConnection connection = context.createConnection();
 		final OlapWrapper wrapper = connection;

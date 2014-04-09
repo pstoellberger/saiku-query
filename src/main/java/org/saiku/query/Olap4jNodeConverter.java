@@ -191,21 +191,34 @@ public class Olap4jNodeConverter extends NodeConverter {
 			List<ParseTreeNode> levels = new ArrayList<ParseTreeNode>();
 			ParseTreeNode existSet = null;
 			boolean allSimple = true;
-			for (QueryLevel l : h.getActiveQueryLevels()) {
+			int firstComplex = -1;
+
+			for (int i = 0; i < h.getActiveQueryLevels().size(); i++) {
+				QueryLevel l = h.getActiveQueryLevels().get(i);
 				allSimple = allSimple & l != null & l.isSimple();
+				// if we find a complex node, save it so parent levels use it for exists
+				if (!allSimple && firstComplex == -1) {
+					firstComplex = i;
+					ParseTreeNode levelNode = toLevel(l);
+					levelNode = toQuerySet(levelNode, l);
+					existSet = getIdentifier(h, l);
+					break;
+				}
 			}
-			for (QueryLevel l : h.getActiveQueryLevels()) {
+			for (int i = 0; i < h.getActiveQueryLevels().size(); i++) {
+				QueryLevel l = h.getActiveQueryLevels().get(i);
 				ParseTreeNode levelNode = toLevel(l);
 				levelNode = toQuerySet(levelNode, l);
 				
-				if (h.isConsistent() && existSet != null) {
+				// don't include exist set if exist set was set on a lower level
+				if (h.isConsistent() && existSet != null && i != firstComplex && !l.getLevel().getLevelType().equals(Type.ALL)) {
 					levelNode = new CallNode(null, "Exists", Syntax.Function, levelNode, existSet);
 				}
 				if (!allSimple && h.getActiveQueryLevels().size() > 1) {
 					WithSetNode withNode = new WithSetNode(null, getIdentifier(h, l), levelNode);
 					withList.add(withNode);
 					levelNode = withNode.getIdentifier();
-					if (!l.isSimple() || existSet != null) {
+					if (!l.isSimple() || (existSet != null && i > firstComplex)) {
 						existSet = levelNode;
 					}
 				}

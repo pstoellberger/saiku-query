@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.olap4j.impl.Named;
 import org.olap4j.metadata.Level;
+import org.olap4j.metadata.Level.Type;
 import org.olap4j.metadata.Member;
 import org.saiku.query.Parameter.SelectionType;
 
@@ -45,7 +46,9 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     
     @Override
     public boolean isSimple() {
-    	return (super.isSimple() && inclusions.isEmpty() && exclusions.isEmpty() && rangeStart == null && rangeEnd == null);
+    	return (super.isSimple() 
+    			&& (level.getLevelType().equals(Type.ALL) || (inclusions.isEmpty() && exclusions.isEmpty() && rangeStart == null && rangeEnd == null))
+    			&& (!hasParameter() || hierarchy.getQuery().getParameter(getParameterName()) == null));
     }
     
     public boolean isRange() {
