@@ -58,6 +58,7 @@ public class Query {
 	private String visualTotalsPattern;
 	private boolean lowestLevelsOnly = false;
 	private Map<String, String> parameters = new HashMap<String, String>();
+	private Map<String, List<String>> aggregators = new HashMap<String, List<String>>();
 	
     /**
      * Constructs a Query object.
@@ -182,7 +183,7 @@ public class Query {
      * name can be found.
      */
     public QueryLevel getLevel(Hierarchy hierarchy, String name) {
-        QueryHierarchy h =  hierarchyMap.get(hierarchy.getName());
+        QueryHierarchy h =  hierarchyMap.get(hierarchy.getUniqueName());
         return h.getActiveLevel(name);
     }
     
@@ -199,6 +200,23 @@ public class Query {
         return getLevel(level.getHierarchy(), level.getName());
     }
 
+    /**
+     * Returns the Olap4j's QueryLevel object according to the 
+     * unique Level name given as parameter. If no Level of the given name is found,
+     * a null value will be returned.
+     */
+    public QueryLevel getLevel(String uniqueLevelName) {
+    	if (StringUtils.isNotBlank(uniqueLevelName)) {
+	    	for (QueryHierarchy qh : hierarchyMap.values()) {
+	    		for (QueryLevel ql : qh.getActiveQueryLevels()) {
+	    			if (ql.getUniqueName().equals(uniqueLevelName)) {
+	    				return ql;
+	    			}
+	    		}
+	    	}
+    	}
+    	return null;
+    }
 
     /**
      * Swaps rows and columns axes. Only applicable if there are two axes.
@@ -551,6 +569,19 @@ public class Query {
 			if (!parameters.containsKey(parameter)) {
 				parameters.put(parameter, null);
 			}
+		}
+	}
+	
+	public List<String> getAggregators(String key) {
+		if (this.aggregators.containsKey(key)) {
+			return aggregators.get(key);
+		}
+		return new ArrayList<String>();
+	}
+	
+	public void setAggregators(String key, List<String> aggs) {
+		if (StringUtils.isNotBlank(key) && aggs != null) {
+			aggregators.put(key, aggs);
 		}
 	}
 
