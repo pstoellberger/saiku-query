@@ -393,6 +393,9 @@ public class Query {
     		if (name != null && name.equals(m.getName())) {
     			return m;
     		}
+    		if (name != null && m.getUniqueName().equals(name)) {
+    			return m;
+    		}
     	}
     	return null;
     }
