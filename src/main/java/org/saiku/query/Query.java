@@ -455,12 +455,16 @@ public class Query {
         QueryAxis newQueryAxis = getAxis(axis);
 		
         if (oldQueryAxis != null && newQueryAxis != null && (position > -1 || (oldQueryAxis.getLocation() != newQueryAxis.getLocation()))) {
-            oldQueryAxis.removeHierarchy(hierarchy);
-            if (position > -1) {
-            	newQueryAxis.addHierarchy(position, hierarchy);
-            } else {
-            	newQueryAxis.addHierarchy(hierarchy);
-            }
+        	if (oldQueryAxis.getLocation() != null) {
+        		oldQueryAxis.removeHierarchy(hierarchy);
+        	}
+        	if (newQueryAxis.getLocation() != null) {
+	            if (position > -1) {
+	            	newQueryAxis.addHierarchy(position, hierarchy);
+	            } else {
+	            	newQueryAxis.addHierarchy(hierarchy);
+	            }
+        	}
         }
     }
 	

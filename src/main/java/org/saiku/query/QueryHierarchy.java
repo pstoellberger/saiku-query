@@ -323,6 +323,10 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     	ql.exclude(m);
     }
     
+    public void clearSelection() {
+    	activeLevels.clear();
+    }
+    
     /* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */
