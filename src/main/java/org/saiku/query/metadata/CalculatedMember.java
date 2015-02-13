@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.olap4j.OlapException;
 import org.olap4j.impl.Named;
+import org.olap4j.impl.NamedListImpl;
 import org.olap4j.mdx.IdentifierNode;
 import org.olap4j.mdx.IdentifierSegment;
 import org.olap4j.mdx.ParseTreeNode;
@@ -279,8 +280,8 @@ public class CalculatedMember implements Member, Named, Calculated {
 	 */
 	@Deprecated
 	public NamedList<Property> getProperties() {
-		// TODO Auto-generated method stub
-		return null;
+		NamedList<Property> l = new NamedListImpl();
+		return l;
 	}
 
 
@@ -289,8 +290,10 @@ public class CalculatedMember implements Member, Named, Calculated {
 	 * DO NOT USE THIS
 	 */
 	@Deprecated
-	public Object getPropertyValue(Property arg0) throws OlapException {
-		// TODO Auto-generated method stub
+	public Object getPropertyValue(Property p) throws OlapException {
+		if (properties.containsKey(p.getName())) {
+			return properties.get(p.getName());
+		}
 		return null;
 	}
 
