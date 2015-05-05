@@ -158,13 +158,13 @@ public class NodeConverter {
 		return wm;
 	}
 	
-	protected static IdentifierNode getIdentifier(AbstractQuerySet... identifiers) {
+	protected static IdentifierNode getIdentifier(String... identifiers) {
 		String identifier = "";
 		for (int i = 0; i < identifiers.length; i ++) {
 			if (i == 0) {
-				identifier = "~" + identifiers[0].getName();
+				identifier = "~" + identifiers[0];
 			} else {
-				identifier += "_" + identifiers[i].getName();
+				identifier += "_" + identifiers[i];
 			}
 		}
 		return IdentifierNode.ofNames(identifier);

@@ -114,7 +114,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 				for(QueryHierarchy h : axis.getQueryHierarchies()) {
 					ParseTreeNode hierarchyNode = toHierarchy(withList, h);
 					if (!isFilter) {
-						WithSetNode withNode = new WithSetNode(null, getIdentifier(axis, h), hierarchyNode);
+						WithSetNode withNode = new WithSetNode(null, getIdentifier(axis.getName(), h.getHierarchy().getDimension().getName(), h.getName()), hierarchyNode);
 						withList.add(withNode);		
 						hierarchies.add(withNode.getIdentifier());
 					} else {
@@ -131,7 +131,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 //		TODO - it seems like its better to have the crossjoin as close to the NON EMPTY axis etc. as possible in mondrian 3 - works ok in mondrian 4
 		ParseTreeNode axisNode = null;
 		if ((flavor != null && !BackendFlavor.SSAS.equals(flavor)) && axisExpression != null && axisAsSet) {
-			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis), axisExpression);
+			WithSetNode withNode = new WithSetNode(null, getIdentifier(axis.getName()), axisExpression);
 			withList.add(withNode);
 			axisNode = withNode.getIdentifier();
 		} else {
@@ -198,7 +198,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 					firstComplex = i;
 					ParseTreeNode levelNode = toLevel(l);
 					levelNode = toQuerySet(levelNode, l);
-					existSet = getIdentifier(h, l);
+					existSet = getIdentifier(h.getHierarchy().getDimension().getName(), h.getName(), l.getName());
 					break;
 				}
 			}
@@ -212,7 +212,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 					levelNode = new CallNode(null, "Exists", Syntax.Function, levelNode, existSet);
 				}
 				if (!allSimple && h.getActiveQueryLevels().size() > 1) {
-					WithSetNode withNode = new WithSetNode(null, getIdentifier(h, l), levelNode);
+					WithSetNode withNode = new WithSetNode(null, getIdentifier(h.getHierarchy().getDimension().getName(), h.getName(), l.getName()), levelNode);
 					withList.add(withNode);
 					levelNode = withNode.getIdentifier();
 					if (!l.isSimple() || (existSet != null && i > firstComplex)) {
