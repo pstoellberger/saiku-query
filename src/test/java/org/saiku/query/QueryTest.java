@@ -1160,21 +1160,21 @@ public class QueryTest extends TestCase {
 		
 		String mdxString3 = query.getMdx();
 		String expectedQuery3 = 
-				"WITH\n"
-		                + "SET [~COLUMNS] AS\n"
-		                + "    {[Store].[All Stores]}\n"
-		                + "SET [~Product_(All)] AS\n"
-		                + "    {[Product].[All Products]}\n"
-		                + "SET [~Product_Product Family] AS\n"
-		                + "    Exists({[Product].[Product Family].Members}, [~Product_Product Category])\n"
-		                + "SET [~Product_Product Category] AS\n"
-		                + "    {[Product].[Drink].[Dairy]}\n"
-		                + "SET [~ROWS] AS\n"
-		                + "    Hierarchize({[~Product_(All)], [~Product_Product Family], [~Product_Product Category]})\n"
-		                + "SELECT\n"
-		                + "[~COLUMNS] ON COLUMNS,\n"
-		                + "[~ROWS] ON ROWS\n"
-		                + "FROM [Sales]";
+            "WITH\n"
+            + "SET [~COLUMNS] AS\n"
+            + "    {[Store].[All Stores]}\n"
+            + "SET [~Product_Product_(All)] AS\n"
+            + "    {[Product].[All Products]}\n"
+            + "SET [~Product_Product_Product Family] AS\n"
+            + "    Exists({[Product].[Product Family].Members}, [~Product_Product_Product Category])\n"
+            + "SET [~Product_Product_Product Category] AS\n"
+            + "    {[Product].[Drink].[Dairy]}\n"
+            + "SET [~ROWS] AS\n"
+            + "    Hierarchize({[~Product_Product_(All)], [~Product_Product_Product Family], [~Product_Product_Product Category]})\n"
+            + "SELECT\n"
+            + "[~COLUMNS] ON COLUMNS,\n"
+            + "[~ROWS] ON ROWS\n"
+            + "FROM [Sales]";
 		TestUtil.assertEqualsVerbose(expectedQuery3, mdxString3);
 		
 
