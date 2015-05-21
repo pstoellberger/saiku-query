@@ -33,6 +33,8 @@ public class QueryLevel extends AbstractQuerySet implements Named {
 	private List<Member> exclusions = new ArrayList<Member>();
 	private Member rangeStart = null;
 	private Member rangeEnd = null;
+	private String rangeStartExpr = null;
+	private String rangeEndExpr = null;
 	private String parameterName = null;
 	private SelectionType parameterSelectionType = Parameter.SelectionType.INCLUSION;
 
@@ -67,7 +69,7 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     }
     
     public boolean isRange() {
-    	return (rangeStart != null && rangeEnd != null);
+    	return ((rangeStart != null && rangeEnd != null) || (rangeStartExpr != null && rangeEndExpr != null));
     }
 
     /**
@@ -96,6 +98,14 @@ public class QueryLevel extends AbstractQuerySet implements Named {
 	public Member getRangeEnd() {
 		return rangeEnd;
 	}
+	
+	public String getRangeStartExpr() {
+		return rangeStartExpr;
+	}
+	
+	public String getRangeEndExpr() {
+		return rangeEndExpr;
+	}
 
     protected void include(Member m) {
     	if(!inclusions.contains(m)) {
@@ -117,6 +127,12 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     	rangeEnd = end;
     }
     
+    public void setRangeExpressions(String startExpr, String endExpr) {
+    	rangeStart = null;
+    	rangeEnd = null;
+    	rangeStartExpr = startExpr;
+    	rangeEndExpr = endExpr;
+    }
 
     /* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()

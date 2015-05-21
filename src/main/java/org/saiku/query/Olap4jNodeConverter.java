@@ -321,11 +321,21 @@ public class Olap4jNodeConverter extends NodeConverter {
 		baseNode = generateSetCall(baseNode);
 		
 		if (level.isRange()) {
-			List<ParseTreeNode> args = new ArrayList<ParseTreeNode>();
-			args.add(new MemberNode(null, level.getRangeStart()));
-			args.add(new MemberNode(null, level.getRangeEnd()));
-			
-			baseNode = new CallNode(null, ":", Syntax.Infix, args);
+			if (level.getRangeStart() != null && level.getRangeEnd() != null) {
+				List<ParseTreeNode> args = new ArrayList<ParseTreeNode>();
+				args.add(new MemberNode(null, level.getRangeStart()));
+				args.add(new MemberNode(null, level.getRangeEnd()));
+				baseNode = new CallNode(null, ":", Syntax.Infix, args);
+			} else {
+				String startExpr = level.getRangeStartExpr();
+				String endExpr = level.getRangeEndExpr();
+				if (StringUtils.isBlank(endExpr)) {
+					baseNode = toMdxNode(startExpr);
+				} else {
+					baseNode = toMdxNode(startExpr + " : " + endExpr);
+				}
+				
+			}
 		}
 		if (inclusions.size() > 0) {
 			baseNode = toOlap4jMemberSet(inclusions);
@@ -372,11 +382,16 @@ public class Olap4jNodeConverter extends NodeConverter {
 			return resolvedList;
 	}
 	
+	private static ParseTreeNode toMdxNode(String mdx) {
+		MdxParser parser = new DefaultMdxParserImpl();
+		ParseTreeNode expression =  parser.parseExpression(mdx);
+		return expression;
+	}
+	
 	private static ParseTreeNode toQuerySet(ParseTreeNode expression, IQuerySet o) {
 		MdxParser parser = new DefaultMdxParserImpl();
-
 		if (o.isMdxSetExpression()) {
-			expression =  parser.parseExpression("{" + o.getMdxSetExpression() + "}");
+			expression =  toMdxNode("{" + o.getMdxSetExpression() + "}");
 		}
 
 		if (expression != null && o.getFilters().size() > 0) {
