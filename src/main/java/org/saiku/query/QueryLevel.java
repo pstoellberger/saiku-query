@@ -35,9 +35,11 @@ public class QueryLevel extends AbstractQuerySet implements Named {
 	private Member rangeEnd = null;
 	private String rangeStartExpr = null;
 	private String rangeEndExpr = null;
+	private String rangeStartSyn;
+	private String rangeEndSyn;
 	private String parameterName = null;
 	private SelectionType parameterSelectionType = Parameter.SelectionType.INCLUSION;
-
+	
     public QueryLevel(QueryHierarchy hierarchy, Level level) {
         super();
         this.hierarchy = hierarchy;
@@ -106,6 +108,14 @@ public class QueryLevel extends AbstractQuerySet implements Named {
 	public String getRangeEndExpr() {
 		return rangeEndExpr;
 	}
+	
+	public String getRangeStartSyn() {
+		return rangeStartSyn;
+	}
+	
+	public String getRangeEndSyn() {
+		return rangeEndSyn;
+	}
 
     protected void include(Member m) {
     	if(!inclusions.contains(m)) {
@@ -127,12 +137,24 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     	rangeEnd = end;
     }
     
+    public void setRangeSynonyms(String startSynonym, String endSynonym) {
+    	rangeStartSyn = startSynonym;
+    	rangeEndSyn = endSynonym;
+    }
+    
+    public void setRangeStartSynonym(String startSyn) {
+    	rangeStartSyn = startSyn;
+    }
+    public void setRangeEndSynonym(String endSyn) {
+    	rangeEndSyn = endSyn;
+    }
+
     public void setRangeExpressions(String startExpr, String endExpr) {
     	rangeStart = null;
     	rangeEnd = null;
     	rangeStartExpr = startExpr;
     	rangeEndExpr = endExpr;
-    }
+    }    
 
     /* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
