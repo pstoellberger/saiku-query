@@ -71,7 +71,7 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     }
     
     public boolean isRange() {
-    	return ((rangeStart != null && rangeEnd != null) || (rangeStartExpr != null && rangeEndExpr != null));
+    	return ((rangeStart != null && rangeEnd != null) || (rangeStartExpr != null || rangeEndExpr != null));
     }
 
     /**
