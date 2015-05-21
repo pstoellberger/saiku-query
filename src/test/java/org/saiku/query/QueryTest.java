@@ -976,6 +976,64 @@ public class QueryTest extends TestCase {
 		}
 	}
 	
+	public void testRangeExp() {
+
+		try {
+			Cube cube = getFoodmartCube("Sales");
+			Query query = new Query("my query", cube);
+			QueryAxis rows = query.getAxis(Axis.ROWS);
+			QueryAxis columns = query.getAxis(Axis.COLUMNS);
+			
+			QueryHierarchy time = query.getHierarchy("[Time]");
+			QueryLevel quarterLevel = time.includeLevel("Year");
+						
+			quarterLevel.setRangeExpressions("[Time].[1998].Lag(1)", "[Time].[1998]");
+			
+			rows.addHierarchy(time);
+			
+			QueryHierarchy products = query.getHierarchy("[Product]");
+			products.includeMember("[Product].[Drink]");
+			columns.addHierarchy(products);
+			
+			SelectNode mdx = query.getSelect();
+			String mdxString = mdx.toString();
+			if (TestContext.DEBUG) {
+				System.out.println(TestUtil.toJavaString(mdxString));
+			}
+			String expectedQuery = 
+					"WITH\n"
+			                + "SET [~COLUMNS] AS\n"
+			                + "    {[Product].[Drink]}\n"
+			                + "SET [~ROWS] AS\n"
+			                + "    ([Time].[1998].Lag(1) : [Time].[1998])\n"
+			                + "SELECT\n"
+			                + "[~COLUMNS] ON COLUMNS,\n"
+			                + "[~ROWS] ON ROWS\n"
+			                + "FROM [Sales]";
+	                        
+			TestUtil.assertEqualsVerbose(expectedQuery, mdxString);
+
+			CellSet results = query.execute();
+			String s = TestUtil.toString(results);
+
+			TestUtil.assertEqualsVerbose(
+					"Axis #0:\n"
+			                + "{}\n"
+			                + "Axis #1:\n"
+			                + "{[Product].[Drink]}\n"
+			                + "Axis #2:\n"
+			                + "{[Time].[1997]}\n"
+			                + "{[Time].[1998]}\n"
+			                + "Row #0: 24,597\n"
+			                + "Row #1: \n",
+							s);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail();
+		}
+	}
+
+	
 	public void testAllLevel() {
 		try {
 		Cube cube = getFoodmartCube("Sales");
