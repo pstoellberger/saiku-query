@@ -66,7 +66,8 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     @Override
     public boolean isSimple() {
     	return (super.isSimple() 
-    			&& (level.getLevelType().equals(Type.ALL) || (inclusions.isEmpty() && exclusions.isEmpty() && rangeStart == null && rangeEnd == null))
+    			&& (level.getLevelType().equals(Type.ALL) 
+    					|| (inclusions.isEmpty() && exclusions.isEmpty() && rangeStart == null && rangeEnd == null && rangeStartExpr == null && rangeEndExpr == null) )
     			&& (!hasParameter() || hierarchy.getQuery().getParameter(getParameterName()) == null));
     }
     
