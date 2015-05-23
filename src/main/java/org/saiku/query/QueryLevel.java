@@ -149,6 +149,15 @@ public class QueryLevel extends AbstractQuerySet implements Named {
     	rangeEndSyn = endSyn;
     }
 
+    public void setRangeStartExpr(String startExp) {
+    	rangeStart = null;
+    	rangeStartExpr = startExp;
+    }
+    public void setRangeEndExpr(String endExp) {
+    	rangeEnd = null;
+    	rangeEndExpr = endExp;
+    }
+
     public void setRangeExpressions(String startExpr, String endExpr) {
     	rangeStart = null;
     	rangeEnd = null;
