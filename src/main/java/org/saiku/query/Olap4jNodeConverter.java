@@ -330,7 +330,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 				String startExpr = level.getRangeStartExpr();
 				String endExpr = level.getRangeEndExpr();
 				if (StringUtils.isBlank(endExpr)) {
-					baseNode = toMdxNode(startExpr);
+					baseNode = generateSetCall(toMdxNode(startExpr));
 				} else {
 					baseNode = toMdxNode(startExpr + " : " + endExpr);
 				}
