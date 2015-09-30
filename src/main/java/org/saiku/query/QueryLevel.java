@@ -117,6 +117,17 @@ public class QueryLevel extends AbstractQuerySet implements Named {
 	public String getRangeEndSyn() {
 		return rangeEndSyn;
 	}
+	
+	protected void clearSelections() {
+		this.inclusions.clear();
+		this.exclusions.clear();
+		this.rangeStart = null;
+		this.rangeStartExpr = null;
+		this.rangeStartSyn = null;
+		this.rangeEnd = null;
+		this.rangeEndExpr = null;
+		this.rangeEndSyn = null;
+	}
 
     protected void include(Member m) {
     	if(!inclusions.contains(m)) {

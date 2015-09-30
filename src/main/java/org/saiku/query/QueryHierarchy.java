@@ -324,6 +324,11 @@ public class QueryHierarchy extends AbstractSortableQuerySet implements Named {
     }
     
     public void clearSelection() {
+    	if (activeLevels != null) {
+    		for (QueryLevel ql : activeLevels) {
+    			ql.clearSelections();
+    		}
+    	}
     	activeLevels.clear();
     }
     
