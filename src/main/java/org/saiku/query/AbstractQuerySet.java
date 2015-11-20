@@ -14,11 +14,11 @@
  *   limitations under the License.
  */package org.saiku.query;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.lang.StringUtils;
 import org.saiku.query.mdx.IFilterFunction;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
