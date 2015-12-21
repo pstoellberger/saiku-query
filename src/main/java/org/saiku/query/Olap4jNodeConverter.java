@@ -121,7 +121,7 @@ public class Olap4jNodeConverter extends NodeConverter {
 						hierarchies.add(hierarchyNode);
 					}
 				}
-				axisExpression = generateCrossJoin(hierarchies, axis.isNonEmpty(), true);
+				axisExpression = generateCrossJoin(hierarchies, axis.isNonEmpty(), isFilter);
 			} else {
 				// TODO do we need to handle hierarchy count == 0 ?
 			}
