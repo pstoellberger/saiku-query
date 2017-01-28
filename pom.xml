@@ -64,6 +64,10 @@
 		</plugins>
 	</build>
 	<repositories>
+		<repository>
+            <id>pentaho-releases</id>
+            <url>http://repository.pentaho.org/artifactory/repo/</url>
+        </repository>
         <repository>
             <id>pentaho-third-party</id>
             <url>http://nexus.pentaho.org/content/repositories/proxied-3rd-party-releases/</url>
@@ -100,7 +104,7 @@
 		<dependency>
 			<groupId>pentaho</groupId>
 			<artifactId>mondrian</artifactId>
-			<version>3.9.0.2</version>
+			<version>3.13.0.2-38</version>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
