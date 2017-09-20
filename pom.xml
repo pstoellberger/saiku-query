@@ -64,19 +64,20 @@
 		</plugins>
 	</build>
 	<repositories>
-		<repository>
-            <id>pentaho-releases</id>
-            <url>http://repository.pentaho.org/artifactory/repo/</url>
-        </repository>
         <repository>
-            <id>pentaho-third-party</id>
-            <url>http://nexus.pentaho.org/content/repositories/proxied-3rd-party-releases/</url>
+          <id>pentaho.resolve.repo</id>
+          <name>Pentaho Omni</name>
+          <url>http://nexus.pentaho.org/content/groups/omni</url>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>always</updatePolicy>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>always</updatePolicy>
+          </snapshots>
         </repository>
-        <repository>
-            <id>pentaho-public-release</id>
-            <url>http://nexus.pentaho.org/content/repositories/pentaho-public-release-repos/</url>
-        </repository>
-	</repositories>
+    </repositories>
 	<dependencies>
 		<dependency>
 			<groupId>org.olap4j</groupId>
